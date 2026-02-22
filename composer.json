@@ -3,19 +3,10 @@
     "description": "CodeIgniter 4 implementation of Vima access control",
     "type": "library",
     "license": "MIT",
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../../core",
-            "options": {
-                "symlink": true
-            }
-        }
-    ],
     "require": {
         "php": ">=8.5",
         "codeigniter4/framework": "^4.7",
-        "vima/core": "dev-master"
+        "vima/core": "^0.1.5"
     },
     "autoload": {
         "psr-4": {
