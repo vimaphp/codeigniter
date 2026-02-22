@@ -1,0 +1,8 @@
+vendor/
+*.log
+.phpunit.result.cache
+.phpunit.cache
+phpunit.xml
+.env
+verify_config.php
+.vscode

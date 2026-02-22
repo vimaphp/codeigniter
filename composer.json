@@ -1,0 +1,43 @@
+{
+    "name": "vima/codeigniter",
+    "description": "CodeIgniter 4 implementation of Vima access control",
+    "type": "library",
+    "license": "MIT",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../core",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "require": {
+        "php": ">=8.5",
+        "codeigniter4/framework": "^4.7",
+        "vima/core": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "Vima\\CodeIgniter\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Vima\\CodeIgniter\\Tests\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0"
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "extra": {
+        "codeigniter4": {
+            "registrar": "Vima\\CodeIgniter\\Config\\Registrar"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
