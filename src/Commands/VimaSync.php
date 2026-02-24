@@ -61,7 +61,30 @@ class VimaSync extends BaseCommand
                 $syncService->refresh();
             }
 
-            $syncService->sync($vimaConfig);
+            $response = $syncService->sync($vimaConfig);
+
+            if($response->warn) {
+                CLI::write(strtoupper('warning:'), 'black', 'yellow');
+                CLI::write('Some roles and permissions have been skipped');
+
+                $roles = $response->skipped->roles;
+                $permissions = $response->skipped->permssions;
+                $bodyMapper = fn ($name,$reason) => [$name, $reason];
+
+                if (!empty($roles)) {
+                    $body = array_map($bodyMapper, $roles);
+
+                    CLI::newLine();
+                    CLI::table($body, ['Role', 'Reason']);
+                }
+                
+                if (!empty($permissions)) {
+                    $body = array_map($bodyMapper, $permissions);
+
+                    CLI::newLine();
+                    CLI::table($body, ['Permission', 'Reason']);
+                }
+            }
 
             CLI::write('Sync completed successfully!', 'green');
 

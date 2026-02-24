@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0bae8804dd91beb26538f1c6225c5c5c",
+    "content-hash": "049170c6bb6414f1cd780671a9b8077a",
     "packages": [
         {
             "name": "codeigniter4/framework",
@@ -1013,16 +1013,16 @@
         },
         {
             "name": "vima/core",
-            "version": "v0.1.5",
+            "version": "v0.1.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vimaphp/vima-core.git",
-                "reference": "d58ad3c9ace6bf1b005c03eae4ec203fa954d1d4"
+                "reference": "ab8f4d1b137eab663e06c698d65bff3f02fe5fab"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vimaphp/vima-core/zipball/d58ad3c9ace6bf1b005c03eae4ec203fa954d1d4",
-                "reference": "d58ad3c9ace6bf1b005c03eae4ec203fa954d1d4",
+                "url": "https://api.github.com/repos/vimaphp/vima-core/zipball/ab8f4d1b137eab663e06c698d65bff3f02fe5fab",
+                "reference": "ab8f4d1b137eab663e06c698d65bff3f02fe5fab",
                 "shasum": ""
             },
             "require": {
@@ -1058,9 +1058,9 @@
             "description": "Framework-agnostic RBAC + ABAC access control engine with pluggable storage backends and a built-in CLI.",
             "support": {
                 "issues": "https://github.com/vimaphp/vima-core/issues",
-                "source": "https://github.com/vimaphp/vima-core/tree/v0.1.5"
+                "source": "https://github.com/vimaphp/vima-core/tree/v0.1.8"
             },
-            "time": "2026-02-22T15:45:07+00:00"
+            "time": "2026-02-24T06:24:24+00:00"
         }
     ],
     "packages-dev": [
