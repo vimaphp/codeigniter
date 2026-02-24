@@ -108,9 +108,8 @@ class CreateVimaTables extends Migration
                 'auto_increment' => true,
             ],
             'user_id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
+                'type' => 'VARCHAR', // allow for any kind of id type used be it integer or uuid systems
+                'constraint' => 50,
             ],
             'role_id' => [
                 'type' => 'INT',
@@ -131,9 +130,8 @@ class CreateVimaTables extends Migration
                 'auto_increment' => true,
             ],
             'user_id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
+                'type' => 'VARCHAR',
+                'constraint' => 50,
             ],
             'permission_id' => [
                 'type' => 'INT',
