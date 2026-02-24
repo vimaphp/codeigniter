@@ -21,9 +21,9 @@ class Filter
      * @param string $permission
      * @return string
      */
-    public static function can(string $permission): string
+    public static function can(string $permission, string $page = '/'): string
     {
-        return "vima_authorize:{$permission}";
+        return "vima_authorize:{$permission},{$page}";
     }
 
     /**
