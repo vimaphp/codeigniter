@@ -13,7 +13,6 @@ namespace Vima\CodeIgniter\Repositories;
 
 use Vima\Core\Contracts\UserPermissionRepositoryInterface;
 use Vima\Core\Entities\UserPermission;
-use Vima\Core\Entities\Permission;
 use Vima\CodeIgniter\Models\UserPermissionModel;
 use Vima\Core\Contracts\PermissionRepositoryInterface;
 
@@ -26,7 +25,7 @@ class UserPermissionRepository implements UserPermissionRepositoryInterface
         $this->model = new UserPermissionModel();
     }
 
-    public function findByUserId(int $userId): array
+    public function findByUserId(int|string $userId): array
     {
         $cols = service('vima_config')->columns->userPermissions;
         $data = $this->model->where($cols->userId, $userId)->findAll();
