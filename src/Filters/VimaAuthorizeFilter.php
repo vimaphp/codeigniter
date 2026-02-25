@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of Vima PHP.
  *
@@ -8,6 +9,7 @@
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
 
 namespace Vima\CodeIgniter\Filters;
 
