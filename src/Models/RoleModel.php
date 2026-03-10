@@ -32,6 +32,6 @@ class RoleModel extends Model
         parent::__construct();
         $cols = service('vima_config')->columns->roles;
         $this->table = service('vima_config')->tables->roles;
-        $this->allowedFields = [$cols->name, $cols->description];
+        $this->allowedFields = [$cols->name, $cols->description, $cols->namespace, $cols->context];
     }
 }

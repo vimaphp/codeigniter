@@ -12,8 +12,9 @@ if (can('posts.edit', $post)) {
 }
 ```
 
-- If only an ability name is provided (`can('posts.create')`), it performs a standard RBAC check.
-- If a resource is provided as the second argument, it automatically triggers policy evaluation (ABAC).
+- **Namespaced Check**: Use a colon or second argument: `can('blog:posts.edit')` or `can('posts.edit', 'blog')`.
+- **Policy Check**: If a resource object is provided, it triggers policy evaluation: `can('posts.edit', $post)`.
+- **Hybrid**: `can('blog:posts.edit', $post)` or `can('posts.edit', 'blog', $post)`.
 
 ## 2. Controller Authorization
 
@@ -101,7 +102,7 @@ class PostPolicy implements PolicyInterface {
         return Post::class;
     }
 
-    public function canEdit(User $user, Post $post): bool {
+    public function canEdit(User $user, Post $post, string $ability, ?string $namespace = null): bool {
         return $user->id === $post->user_id || $user->is_admin;
     }
 }
@@ -150,6 +151,9 @@ If you need to rename a role (e.g., from `admin` to `admins`) without breaking y
 3.  **Run Sync**: `php spark vima:sync`.
 
 Your code continues to use `Roles::ADMIN`, but Vima now maps it to the new `admins` string. This maintains a stable application logic even as your system requirements evolve.
+
+## 6. Schema-Driven Integration
+Vima CI4 uses the Core's Schema DTO system. This means your migrations are automatically updated if new fields (like `context` or `namespace`) are added to the library. No manual database tampering is required—just run your migrations.
 
 ---
 

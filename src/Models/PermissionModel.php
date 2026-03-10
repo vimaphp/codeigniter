@@ -32,6 +32,6 @@ class PermissionModel extends Model
         parent::__construct();
         $cols = service('vima_config')->columns->permissions;
         $this->table = service('vima_config')->tables->permissions;
-        $this->allowedFields = [$cols->name, $cols->description];
+        $this->allowedFields = [$cols->name, $cols->description, $cols->namespace];
     }
 }

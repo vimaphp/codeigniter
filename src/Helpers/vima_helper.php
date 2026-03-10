@@ -54,16 +54,12 @@ if (!function_exists('can')) {
             throw new \Exception("Vima could not resolve the current user. Please ensure a user is logged in or define 'currentUser' in your Vima configuration.");
         }
 
-        $namespace = explode(":", $permission)[0] ?? null;
+        $namespace = null;
 
-        if (!$namespace) {
-            $namespace = $arguments[0] ?? null;
-
-            if ($namespace && !is_string($namespace)) {
-                $namespace = null;
-            }
-
-            array_shift($arguments);
+        if (str_contains($permission, ':')) {
+            [$namespace, $permission] = explode(":", $permission, 2);
+        } elseif (!empty($arguments) && is_string($arguments[0])) {
+            $namespace = array_shift($arguments);
         }
 
         return vima()->can($user, $permission, $namespace, ...$arguments);
