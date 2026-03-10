@@ -35,8 +35,10 @@ class RoleRepository implements RoleRepositoryInterface
 
         $role = new Role(
             name: $data[$cols->name],
+            namespace: $data[$cols->namespace] ?? null,
             id: $data[$cols->id],
-            description: $data[$cols->description] ?? null
+            description: $data[$cols->description] ?? null,
+            context: isset($data[$cols->context]) ? json_decode($data[$cols->context], true) : [],
         );
 
         if ($resolve) {
@@ -48,29 +50,51 @@ class RoleRepository implements RoleRepositoryInterface
         return $role;
     }
 
-    public function findByName(string $name): ?Role
+    public function findByName(string $name, ?string $namespace = null): ?Role
     {
         $cols = service('vima_config')->columns->roles;
-        $data = $this->model->asArray()->where($cols->name, $name)->first();
+        $query = $this->model->asArray()->where($cols->name, $name);
+
+        if ($namespace) {
+            $query->where($cols->namespace, $namespace);
+        } else {
+            $query->groupStart()
+                ->where($cols->namespace, null)
+                ->orWhere($cols->namespace, '')
+                ->groupEnd();
+        }
+
+        $data = $query->first();
         if (!$data) {
             return null;
         }
 
         return new Role(
             name: $data[$cols->name],
+            namespace: $data[$cols->namespace] ?? null,
             id: $data[$cols->id],
-            description: $data[$cols->description] ?? null
+            description: $data[$cols->description] ?? null,
+            context: isset($data[$cols->context]) ? json_decode($data[$cols->context], true) : [],
         );
     }
 
-    public function all(): array
+    public function all(?string $namespace = null): array
     {
         $cols = service('vima_config')->columns->roles;
-        $all = $this->model->asArray()->findAll();
+        $query = $this->model->asArray();
+
+        if ($namespace !== null) {
+            $query->where($cols->namespace, $namespace);
+        }
+
+        $all = $query->findAll();
+
         return array_map(fn($data) => new Role(
             name: $data[$cols->name],
+            namespace: $data[$cols->namespace] ?? null,
             id: $data[$cols->id],
-            description: $data[$cols->description] ?? null
+            description: $data[$cols->description] ?? null,
+            context: isset($data[$cols->context]) ? json_decode($data[$cols->context], true) : [],
         ), $all);
     }
 
@@ -79,7 +103,9 @@ class RoleRepository implements RoleRepositoryInterface
         $cols = service('vima_config')->columns->roles;
         $data = [
             $cols->name => $role->name,
+            $cols->namespace => $role->namespace,
             $cols->description => $role->description,
+            $cols->context => empty($role->context) ? null : json_encode($role->context),
         ];
 
         if ($role->id) {
@@ -98,7 +124,7 @@ class RoleRepository implements RoleRepositoryInterface
                 if (!$permission->id) {
                     /** @var \Vima\Core\Contracts\PermissionRepositoryInterface $pRepo */
                     $pRepo = service('vima_permissions');
-                    $savedP = $pRepo->findByName($permission->name);
+                    $savedP = $pRepo->findByName($permission->name, $permission->namespace);
                     if ($savedP) {
                         $permission->id = $savedP->id;
                     } else {
@@ -122,12 +148,33 @@ class RoleRepository implements RoleRepositoryInterface
         if ($role->id) {
             $this->model->delete($role->id);
         } else {
-            $this->model->where($cols->name, $role->name)->delete();
+            $query = $this->model->where($cols->name, $role->name);
+            if ($role->namespace) {
+                $query->where($cols->namespace, $role->namespace);
+            } else {
+                $query->groupStart()
+                    ->where($cols->namespace, null)
+                    ->orWhere($cols->namespace, '')
+                    ->groupEnd();
+            }
+            $query->delete();
         }
     }
 
     public function deleteAll(): void
     {
         $this->model->truncate();
+    }
+
+    public function getParents(Role $role): array
+    {
+        // TODO: Implement database structure for role inheritance
+        return [];
+    }
+
+    public function getChildren(Role $role): array
+    {
+        // TODO: Implement database structure for role inheritance
+        return [];
     }
 }

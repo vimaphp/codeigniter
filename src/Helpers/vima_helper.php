@@ -27,8 +27,8 @@ if (!function_exists('can')) {
     /**
      * Check if the current user has the given permission.
      * 
-     * @param string $permission
-     * @param mixed ...$arguments
+     * @param string $permission The permission to check.
+     * @param mixed ...$arguments The arguments to pass to the policy callback. You can pass a namespace as the first argument.
      * @return bool
      */
     function can(string $permission, ...$arguments): bool
@@ -54,7 +54,19 @@ if (!function_exists('can')) {
             throw new \Exception("Vima could not resolve the current user. Please ensure a user is logged in or define 'currentUser' in your Vima configuration.");
         }
 
-        return vima()->can($user, $permission, ...$arguments);
+        $namespace = explode(":", $permission)[0] ?? null;
+
+        if (!$namespace) {
+            $namespace = $arguments[0] ?? null;
+
+            if ($namespace && !is_string($namespace)) {
+                $namespace = null;
+            }
+
+            array_shift($arguments);
+        }
+
+        return vima()->can($user, $permission, $namespace, ...$arguments);
     }
 }
 

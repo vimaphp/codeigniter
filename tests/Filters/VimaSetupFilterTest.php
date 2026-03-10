@@ -2,8 +2,8 @@
 
 namespace Vima\CodeIgniter\Tests\Filters;
 
-use CodeIgniter\Test\CIUnitTestCase;
 use Vima\CodeIgniter\Filters\VimaSetupFilter;
+use Vima\CodeIgniter\Tests\Fixtures\User;
 use Vima\CodeIgniter\Tests\VimaTestCase;
 use Config\Services;
 use Vima\Core\Contracts\PolicyInterface;
@@ -27,7 +27,7 @@ class VimaSetupFilterTest extends VimaTestCase
 {
     public function testBeforeRegistersPoliciesFromConfig()
     {
-        \Vima\CodeIgniter\Filters\VimaSetupFilter::reset();
+        VimaSetupFilter::reset();
         $config = config('Vima');
         $config->policies = [MockPolicy::class];
 
@@ -38,12 +38,12 @@ class VimaSetupFilterTest extends VimaTestCase
         $post = new MockResource();
 
         // Use valid User fixture
-        $this->assertTrue($vima->can(new \Vima\CodeIgniter\Tests\Fixtures\User(1), 'edit', $post));
+        $this->assertTrue($vima->can(new User(1), 'edit', null, $post));
     }
 
     public function testBeforeIgnoresInvalidPolicies()
     {
-        \Vima\CodeIgniter\Filters\VimaSetupFilter::reset();
+        VimaSetupFilter::reset();
         $config = config('Vima');
         $config->policies = [\stdClass::class]; // Doesn't implement PolicyInterface
 
@@ -53,6 +53,6 @@ class VimaSetupFilterTest extends VimaTestCase
         $vima = service('vima');
 
         // Should return false because stdClass has no policy registered
-        $this->assertFalse($vima->can(new \Vima\CodeIgniter\Tests\Fixtures\User(1), 'edit', new \stdClass()));
+        $this->assertFalse($vima->can(new User(1), 'edit', null, new \stdClass()));
     }
 }

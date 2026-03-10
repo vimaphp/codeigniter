@@ -12,144 +12,83 @@
 namespace Vima\CodeIgniter\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
+use Vima\Core\Support\FrameworkIntegration;
 
 class CreateVimaTables extends Migration
 {
     public function up()
     {
-        // Roles
-        $this->forge->addField([
-            'id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
-                'auto_increment' => true,
-            ],
-            'name' => [
-                'type' => 'VARCHAR',
-                'constraint' => 100,
-            ],
-            'description' => [
-                'type' => 'TEXT',
-                'null' => true,
-            ],
-            'created_at' => [
-                'type' => 'DATETIME',
-                'null' => true,
-            ],
-            'updated_at' => [
-                'type' => 'DATETIME',
-                'null' => true,
-            ],
-        ]);
-        $this->forge->addKey('id', true);
-        $this->forge->addUniqueKey('name');
-        $this->forge->createTable('roles', true);
+        $schema = FrameworkIntegration::getSchema();
 
-        // Permissions
-        $this->forge->addField([
-            'id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
-                'auto_increment' => true,
-            ],
-            'name' => [
-                'type' => 'VARCHAR',
-                'constraint' => 100,
-            ],
-            'description' => [
-                'type' => 'TEXT',
-                'null' => true,
-            ],
-            'created_at' => [
-                'type' => 'DATETIME',
-                'null' => true,
-            ],
-            'updated_at' => [
-                'type' => 'DATETIME',
-                'null' => true,
-            ],
-        ]);
-        $this->forge->addKey('id', true);
-        $this->forge->addUniqueKey('name');
-        $this->forge->createTable('permissions', true);
+        foreach ($schema->getTables() as $tableName => $table) {
+            $forgeFields = [];
 
-        // Role Permissions
-        $this->forge->addField([
-            'id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
-                'auto_increment' => true,
-            ],
-            'role_id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
-            ],
-            'permission_id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
-            ],
-        ]);
-        $this->forge->addKey('id', true);
-        $this->forge->addForeignKey('role_id', 'roles', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addForeignKey('permission_id', 'permissions', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('role_permissions', true);
+            foreach ($table->fields as $field) {
+                $ciField = [];
+                $ciType = 'VARCHAR';
 
-        // User Roles
-        $this->forge->addField([
-            'id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
-                'auto_increment' => true,
-            ],
-            'user_id' => [
-                'type' => 'VARCHAR', // allow for any kind of id type used be it integer or uuid systems
-                'constraint' => 50,
-            ],
-            'role_id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
-            ],
-        ]);
-        $this->forge->addKey('id', true);
-        $this->forge->addForeignKey('role_id', 'roles', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('user_roles', true);
+                switch ($field->type) {
+                    case 'integer':
+                        $ciType = 'INT';
+                        if (!isset($field->length)) {
+                            $ciField['constraint'] = 11;
+                        }
+                        break;
+                    case 'string':
+                        $ciType = 'VARCHAR';
+                        $ciField['constraint'] = $field->length ?? 100;
+                        break;
+                    case 'text':
+                    case 'json':
+                        $ciType = 'TEXT';
+                        break;
+                    case 'datetime':
+                        $ciType = 'DATETIME';
+                        break;
+                }
 
-        // User Permissions (Direct)
-        $this->forge->addField([
-            'id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
-                'auto_increment' => true,
-            ],
-            'user_id' => [
-                'type' => 'VARCHAR',
-                'constraint' => 50,
-            ],
-            'permission_id' => [
-                'type' => 'INT',
-                'constraint' => 11,
-                'unsigned' => true,
-            ],
-        ]);
-        $this->forge->addKey('id', true);
-        $this->forge->addForeignKey('permission_id', 'permissions', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('user_permissions', true);
+                $ciField['type'] = $ciType;
+
+                if ($field->nullable) {
+                    $ciField['null'] = true;
+                }
+
+                if ($field->unsigned) {
+                    $ciField['unsigned'] = true;
+                }
+
+                if ($field->autoIncrement) {
+                    $ciField['auto_increment'] = true;
+                }
+
+                $forgeFields[$field->name] = $ciField;
+            }
+
+            $this->forge->addField($forgeFields);
+
+            foreach ($table->primaryKeys as $pk) {
+                $this->forge->addKey($pk, true);
+            }
+
+            foreach ($table->uniqueKeys as $uk) {
+                $this->forge->addUniqueKey($uk);
+            }
+
+            foreach ($table->foreignKeys as $fk) {
+                $this->forge->addForeignKey($fk->column, $fk->onTable, $fk->onColumn, $fk->onUpdate, $fk->onDelete);
+            }
+
+            $this->forge->createTable($tableName, true);
+        }
     }
 
     public function down()
     {
-        $this->forge->dropTable('user_permissions', true);
-        $this->forge->dropTable('user_roles', true);
-        $this->forge->dropTable('role_permissions', true);
-        $this->forge->dropTable('permissions', true);
-        $this->forge->dropTable('roles', true);
+        $schema = FrameworkIntegration::getSchema();
+        $tables = array_keys($schema->getTables());
+
+        foreach (array_reverse($tables) as $tableName) {
+            $this->forge->dropTable($tableName, true);
+        }
     }
 }

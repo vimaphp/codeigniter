@@ -34,32 +34,52 @@ class PermissionRepository implements PermissionRepositoryInterface
 
         return new Permission(
             name: $data[$cols->name],
+            namespace: $data[$cols->namespace] ?? null,
             id: $data[$cols->id],
             description: $data[$cols->description] ?? null
         );
     }
 
-    public function findByName(string $name): ?Permission
+    public function findByName(string $name, ?string $namespace = null): ?Permission
     {
         $cols = service('vima_config')->columns->permissions;
-        $data = $this->model->asArray()->where($cols->name, $name)->first();
+        $query = $this->model->asArray()->where($cols->name, $name);
+
+        if ($namespace) {
+            $query->where($cols->namespace, $namespace);
+        } else {
+            $query->groupStart()
+                ->where($cols->namespace, null)
+                ->orWhere($cols->namespace, '')
+                ->groupEnd();
+        }
+
+        $data = $query->first();
         if (!$data) {
             return null;
         }
 
         return new Permission(
             name: $data[$cols->name],
+            namespace: $data[$cols->namespace] ?? null,
             id: $data[$cols->id],
             description: $data[$cols->description] ?? null
         );
     }
 
-    public function all(): array
+    public function all(?string $namespace = null): array
     {
         $cols = service('vima_config')->columns->permissions;
-        $all = $this->model->asArray()->findAll();
+        $query = $this->model->asArray();
+
+        if ($namespace !== null) {
+            $query->where($cols->namespace, $namespace);
+        }
+
+        $all = $query->findAll();
         return array_map(fn($data) => new Permission(
             name: $data[$cols->name],
+            namespace: $data[$cols->namespace] ?? null,
             id: $data[$cols->id],
             description: $data[$cols->description] ?? null
         ), $all);
@@ -70,6 +90,7 @@ class PermissionRepository implements PermissionRepositoryInterface
         $cols = service('vima_config')->columns->permissions;
         $data = [
             $cols->name => $permission->name,
+            $cols->namespace => $permission->namespace,
             $cols->description => $permission->description,
         ];
 
@@ -89,7 +110,16 @@ class PermissionRepository implements PermissionRepositoryInterface
         if ($permission->id) {
             $this->model->delete($permission->id);
         } else {
-            $this->model->where($cols->name, $permission->name)->delete();
+            $query = $this->model->where($cols->name, $permission->name);
+            if ($permission->namespace) {
+                $query->where($cols->namespace, $permission->namespace);
+            } else {
+                $query->groupStart()
+                    ->where($cols->namespace, null)
+                    ->orWhere($cols->namespace, '')
+                    ->groupEnd();
+            }
+            $query->delete();
         }
     }
 
