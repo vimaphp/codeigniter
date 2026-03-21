@@ -22,7 +22,12 @@ class VimaGenerateMaps extends BaseCommand
     protected $group = 'Vima';
     protected $name = 'vima:generate-maps';
     protected $description = 'Generate PHP mapper classes for roles and permissions';
-    protected $usage = 'vima:generate-maps';
+    protected $usage = 'vima:generate-maps [options]';
+
+    protected $options = [
+        'ts'     => 'Generate TypeScript types and constants',
+        'ts-dir' => 'Directory to output the TS files (default: resources/js/vima)',
+    ];
 
     public function run(array $params)
     {
@@ -34,6 +39,9 @@ class VimaGenerateMaps extends BaseCommand
 
         $outputDir = APPPATH . 'Mappers' . DIRECTORY_SEPARATOR . 'Vima' . DIRECTORY_SEPARATOR;
         $namespace = 'App\Mappers\Vima';
+
+        $tsDir = CLI::getOption('ts-dir') ?? $rootPath . 'resources' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'vima';
+        $generateTs = !!CLI::getOption('ts');
 
         CLI::write('Initializing Vima Mapper...', 'yellow');
 
@@ -54,6 +62,17 @@ class VimaGenerateMaps extends BaseCommand
             CLI::write('Generating Permissions mapper...', 'yellow');
             $permsClass = $generator->generatePermissions($config->setup, $namespace);
             file_put_contents($outputDir . 'Permissions.php', $permsClass);
+
+            // Generate Namespaces
+            CLI::write('Generating Namespaces mapper...', 'yellow');
+            $namespacesClass = $generator->generateNamespaces($namespace);
+            file_put_contents($outputDir . 'Namespaces.php', $namespacesClass);
+
+            if ($generateTs) {
+                CLI::write('Generating TypeScript maps...', 'yellow');
+                $mappingService->generateTypeScriptFiles($tsDir);
+                CLI::write("TypeScript maps generated in: {$tsDir}", 'green');
+            }
 
             CLI::write('Mapper classes generated successfully in ' . $namespace, 'green');
             CLI::write('Mapping file updated: ' . $mappingFile, 'green');

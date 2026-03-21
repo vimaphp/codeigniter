@@ -15,12 +15,14 @@ use Vima\Core\Contracts\UserPermissionRepositoryInterface;
 use Vima\Core\Entities\UserPermission;
 use Vima\CodeIgniter\Models\UserPermissionModel;
 use Vima\Core\Contracts\PermissionRepositoryInterface;
+use Vima\Core\Contracts\EventDispatcherInterface;
+use Vima\Core\Events\Repository\RepositoryAction;
 
 class UserPermissionRepository implements UserPermissionRepositoryInterface
 {
     protected UserPermissionModel $model;
 
-    public function __construct()
+    public function __construct(protected ?EventDispatcherInterface $dispatcher = null)
     {
         $this->model = new UserPermissionModel();
     }
@@ -69,6 +71,8 @@ class UserPermissionRepository implements UserPermissionRepositoryInterface
         ]);
 
         $userPermission->id = $id;
+
+        $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_CREATED, UserPermission::class, $userPermission));
     }
 
     public function remove(UserPermission $userPermission): void
@@ -78,5 +82,7 @@ class UserPermissionRepository implements UserPermissionRepositoryInterface
             $cols->userId => $userPermission->user_id,
             $cols->permissionId => $userPermission->permission_id
         ])->delete();
+
+        $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_DELETED, UserPermission::class, $userPermission));
     }
 }

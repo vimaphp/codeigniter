@@ -1,0 +1,38 @@
+<?php
+/**
+ * This file is part of Vima PHP.
+ *
+ * (c) Vima PHP <https://github.com/vimaphp>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
+namespace Vima\CodeIgniter\Models;
+
+use CodeIgniter\Model;
+
+/**
+ * Class UserDenyModel
+ *
+ * Model for the user_denies table.
+ */
+class UserDenyModel extends Model
+{
+    protected $table = 'user_denies'; // Default, will be overridden by repository/config
+    protected $primaryKey = 'id';
+    protected $returnType = 'array';
+    protected $useAutoIncrement = true;
+    protected $allowedFields = ['user_id', 'permission_id'];
+
+    public function __construct()
+    {
+        parent::__construct();
+        
+        $this->table = 'user_denies';
+        $this->primaryKey = 'id';
+        $this->allowedFields = ['user_id', 'permission_id', 'namespace', 'reason', 'created_at'];
+    }
+}

@@ -14,12 +14,14 @@ namespace Vima\CodeIgniter\Repositories;
 use Vima\Core\Contracts\PermissionRepositoryInterface;
 use Vima\Core\Entities\Permission;
 use Vima\CodeIgniter\Models\PermissionModel;
+use Vima\Core\Contracts\EventDispatcherInterface;
+use Vima\Core\Events\Repository\RepositoryAction;
 
 class PermissionRepository implements PermissionRepositoryInterface
 {
     protected PermissionModel $model;
 
-    public function __construct()
+    public function __construct(protected ?EventDispatcherInterface $dispatcher = null)
     {
         $this->model = new PermissionModel();
     }
@@ -67,13 +69,17 @@ class PermissionRepository implements PermissionRepositoryInterface
         );
     }
 
-    public function all(?string $namespace = null): array
+    public function all(?string $namespace = null, bool $onlyGlobal = false): array
     {
         $cols = service('vima_config')->columns->permissions;
         $query = $this->model->asArray();
 
         if ($namespace !== null) {
             $query->where($cols->namespace, $namespace);
+        } else {
+            if ($onlyGlobal) {
+                $query->where($cols->namespace, null);
+            }
         }
 
         $all = $query->findAll();
@@ -96,9 +102,19 @@ class PermissionRepository implements PermissionRepositoryInterface
 
         if ($permission->id) {
             $this->model->update($permission->id, $data);
+            $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_UPDATED, Permission::class, $permission));
         } else {
-            $id = $this->model->insert($data);
-            $permission->id = $id;
+            // Check for existing by name/namespace if no ID
+            $existing = $this->findByName($permission->name, $permission->namespace);
+            if ($existing) {
+                $permission->id = $existing->id;
+                $this->model->update($permission->id, $data);
+                $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_UPDATED, Permission::class, $permission));
+            } else {
+                $id = $this->model->insert($data);
+                $permission->id = $id;
+                $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_CREATED, Permission::class, $permission));
+            }
         }
 
         return $permission;
@@ -109,6 +125,7 @@ class PermissionRepository implements PermissionRepositoryInterface
         $cols = service('vima_config')->columns->permissions;
         if ($permission->id) {
             $this->model->delete($permission->id);
+            $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_DELETED, Permission::class, $permission));
         } else {
             $query = $this->model->where($cols->name, $permission->name);
             if ($permission->namespace) {
@@ -120,11 +137,13 @@ class PermissionRepository implements PermissionRepositoryInterface
                     ->groupEnd();
             }
             $query->delete();
+            $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_DELETED, Permission::class, $permission));
         }
     }
 
     public function deleteAll(): void
     {
         $this->model->truncate();
+        $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_DELETED_ALL, Permission::class));
     }
 }

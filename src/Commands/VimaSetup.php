@@ -78,34 +78,59 @@ class VimaSetup extends BaseCommand
 
         if (file_exists($dest)) {
             if (!$overwrite) {
-                CLI::write('Config file already exists. Use --overwrite to overwrite it.', 'yellow');
-                return;
-            }
-
-            // inform of file overwrite
-            if (CLI::prompt('Config file already exists. Overwrite?', ['n', 'y']) !== 'y') {
+                CLI::write('File already exists: ' . $dest, 'yellow');
                 return;
             }
 
             unlink($dest);
         }
 
-        if (copy($source, $dest)) {
-            // Adjust namespace in the copied file
-            $content = file_get_contents($dest);
+        $content = file_get_contents($source);
+        if ($content === false) {
+            CLI::error('Failed to read source config file.');
+            return;
+        }
 
-            $search[] = "namespace Vima\CodeIgniter\Config;";
-            $search[] = "use CodeIgniter\Config\BaseConfig;";
-            $search[] = "class Vima extends BaseConfig";
-            $search[] = "use Vima\CodeIgniter\Libraries\Setup as SetupLibrary;";
-            $replace[] = "namespace Config;";
-            $replace[] = "use Vima\CodeIgniter\Config\Vima as BaseVima;";
-            $replace[] = "class Vima extends BaseVima";
-            $replace[] = "use App\Libraries\Vima\Setup as SetupLibrary;";
+        // Adjust namespace and imports
+        $search = [
+            "namespace Vima\CodeIgniter\Config;",
+            "use CodeIgniter\Config\BaseConfig;",
+            "class Vima extends BaseConfig",
+            "use Vima\CodeIgniter\Libraries\Setup as SetupLibrary;",
+        ];
+        $replace = [
+            "namespace Config;",
+            "use Vima\CodeIgniter\Config\Vima as BaseVima;",
+            "class Vima extends BaseVima",
+            "use App\Libraries\Vima\Setup as SetupLibrary;",
+        ];
 
-            $content = str_replace($search, $replace, $content);
+        $content = str_replace($search, $replace, $content);
 
-            file_put_contents($dest, $content);
+        // Remove the resolveSetup method definition from the published file
+        // Strip the constructor and the resolveSetup method definition
+        $content = preg_replace('/    public function __construct\(.*?\n    \}/s', '', $content);
+        $content = preg_replace('/    protected function resolveSetup\(.*?\n    \}/s', '', $content);
+
+        // Remove unused class imports
+        $unusedNodes = [
+            'Vima\Core\Config\RoleColumns',
+            'Vima\Core\Config\PermissionColumns',
+            'Vima\Core\Config\RolePermissionColumns',
+            'Vima\Core\Config\UserRoleColumns',
+            'Vima\Core\Config\UserPermissionColumns',
+            'Vima\Core\Config\RoleParentColumns',
+        ];
+
+        foreach ($unusedNodes as $node) {
+            $content = preg_replace('/use ' . preg_quote($node, '/') . ";\n/", '', $content);
+        }
+        
+        // Clean up any double blank lines at the end of the class
+        $content = preg_replace('/\n\s*\n\}/', "\n}", $content);
+
+        if (file_put_contents($dest, $content)) {
+            CLI::write('Published: ' . $dest, 'green');
         } else {
             CLI::error('Failed to publish config file.');
         }
@@ -127,11 +152,7 @@ class VimaSetup extends BaseCommand
 
         if (file_exists($dest)) {
             if (!$overwrite) {
-                CLI::write('Setup file already exists. Use --overwrite to overwrite it.', 'yellow');
-                return;
-            }
-
-            if (CLI::prompt('Setup file already exists. Overwrite?', ['n', 'y']) !== 'y') {
+                CLI::write('File already exists: ' . $dest, 'yellow');
                 return;
             }
 

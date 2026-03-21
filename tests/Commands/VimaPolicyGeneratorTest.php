@@ -29,7 +29,7 @@ class VimaPolicyGeneratorTest extends VimaTestCase
 
     public function testGeneratorCreatesFileWithCorrectContent()
     {
-        command('vima:make:policy BlogPolicy --resource "App\\\\Entities\\\\Blog"');
+        command('vima:make-policy BlogPolicy --resource "App\\\\Entities\\\\Blog"');
 
         $this->assertFileExists(APPPATH . 'Policies/BlogPolicy.php');
 
@@ -44,7 +44,7 @@ class VimaPolicyGeneratorTest extends VimaTestCase
     {
         file_put_contents(APPPATH . 'Policies/BlogPolicy.php', 'Original Content');
 
-        command('vima:make:policy BlogPolicy --resource "App\\\\Entities\\\\Blog" --force');
+        command('vima:make-policy BlogPolicy --resource "App\\\\Entities\\\\Blog" --force');
 
         $content = file_get_contents(APPPATH . 'Policies/BlogPolicy.php');
         $this->assertStringNotContainsString('Original Content', $content);

@@ -15,12 +15,14 @@ use Vima\Core\Contracts\UserRoleRepositoryInterface;
 use Vima\Core\Entities\UserRole;
 use Vima\CodeIgniter\Models\UserRoleModel;
 use Vima\Core\Contracts\RoleRepositoryInterface;
+use Vima\Core\Contracts\EventDispatcherInterface;
+use Vima\Core\Events\Repository\RepositoryAction;
 
 class UserRoleRepository implements UserRoleRepositoryInterface
 {
     protected UserRoleModel $model;
 
-    public function __construct()
+    public function __construct(protected ?EventDispatcherInterface $dispatcher = null)
     {
         $this->model = new UserRoleModel();
     }
@@ -60,6 +62,8 @@ class UserRoleRepository implements UserRoleRepositoryInterface
         ]);
 
         $userRole->id = $id;
+
+        $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_CREATED, UserRole::class, $userRole));
     }
 
     public function revoke(UserRole $userRole): void
@@ -70,5 +74,7 @@ class UserRoleRepository implements UserRoleRepositoryInterface
             $cols->userId => $userRole->user_id,
             $cols->roleId => $userRole->role_id
         ])->delete();
+
+        $this->dispatcher?->dispatch(new RepositoryAction(RepositoryAction::ACTION_DELETED, UserRole::class, $userRole));
     }
 }

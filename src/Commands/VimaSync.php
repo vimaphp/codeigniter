@@ -8,6 +8,7 @@
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
 
 namespace Vima\CodeIgniter\Commands;
 
@@ -23,75 +24,48 @@ class VimaSync extends BaseCommand
     protected $description = 'Sync permissions and roles from config to storage';
     protected $usage = 'vima:sync [options]';
     protected $options = [
-        'refresh' => 'Clear existing permissions and roles before syncing',
+        'refresh' => 'Wipe existing roles and permissions before syncing',
     ];
 
     public function run(array $params)
     {
-        $refresh = !!CLI::getOption('refresh');
-        $config = config('Vima', false); // ensure to always get the latest config updates
+        $refresh = isset($params['refresh']) || CLI::getOption('refresh');
 
-        // Convert CI4 Config to VimaConfig
-        $vimaConfig = new VimaConfig(
-            tables: $config->tables,
-            columns: $config->columns,
-            setup: $config->setup
-        );
-
-        if ($refresh) {
-            if (CLI::prompt('Are you sure you want to refresh? This will delete all existing permissions, roles and any related user data.', ['n', 'y']) !== 'y') {
-                CLI::write('Sync cancelled.', 'yellow');
-                return;
-            }
-
-            CLI::write('Refreshing storage before sync...', 'yellow');
-        }
-
-        CLI::write('Syncing permissions and roles...', 'yellow');
+        CLI::write('Initializing Vima Sync...', 'yellow');
 
         try {
             /** @var SyncService $syncService */
-            $syncService = new SyncService(
-                roles: service('vima_roles'),
-                permissions: service('vima_permissions'),
-                rolePermissions: service('vima_role_permissions')
-            );
+            $syncService = service('vima_sync');
 
             if ($refresh) {
                 $syncService->refresh();
+                CLI::write('Refresh mode enabled.', 'cyan');
             }
 
-            $response = $syncService->sync($vimaConfig);
+            /** @var VimaConfig $config */
+            $config = service('vima_config');
 
-            if($response->warn) {
-                CLI::write(strtoupper('warning:'), 'black', 'yellow');
-                CLI::write('Some roles and permissions have been skipped');
+            CLI::write('Syncing definitions...', 'yellow');
+            $response = $syncService->sync($config);
 
-                $roles = $response->skipped->roles;
-                $permissions = $response->skipped->permssions;
-                $bodyMapper = fn ($name,$reason) => [$name, $reason];
+            CLI::write('Sync complete.', 'green');
 
-                if (!empty($roles)) {
-                    $body = array_map($bodyMapper, $roles);
-
-                    CLI::newLine();
-                    CLI::table($body, ['Role', 'Reason']);
+            if ($response?->warn) {
+                foreach ($response->skipped->roles as $name => $reason) {
+                    CLI::write("  [Role] Skipped $name: $reason", 'yellow');
                 }
-                
-                if (!empty($permissions)) {
-                    $body = array_map($bodyMapper, $permissions);
-
-                    CLI::newLine();
-                    CLI::table($body, ['Permission', 'Reason']);
+                foreach ($response->skipped->permissions as $name => $reason) {
+                    CLI::write("  [Permission] Skipped $name: $reason", 'yellow');
                 }
             }
 
-            CLI::write('Sync completed successfully!', 'green');
-
-            // Automatically generate maps
+            // Also trigger map generation if everything went well
+            CLI::write('Triggering map generation...', 'yellow');
             $this->call('vima:generate-maps');
+
         } catch (\Throwable $e) {
             CLI::error('Sync failed: ' . $e->getMessage());
+            log_message('error', '[Vima] Sync failed: ' . $e->getMessage());
         }
     }
 }

@@ -21,7 +21,7 @@ class PermissionModel extends Model
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
-    protected $allowedFields = ['name', 'description'];
+    protected $allowedFields = ['name', 'description', 'namespace'];
 
     protected $useTimestamps = true;
     protected $createdField = 'created_at';

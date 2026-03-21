@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Vima\CodeIgniter\Libraries;
 
+use Vima\Core\Contracts\SetupProviderInterface;
 use Vima\Core\Entities\Permission;
 use Vima\Core\Entities\Role;
 
-final class Setup
+final class Setup implements SetupProviderInterface
 {
-    public static function get(): array
+    public function get(): array
     {
         return [
             'roles' => [

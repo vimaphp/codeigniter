@@ -56,4 +56,24 @@ class RoleRepositoryTest extends VimaTestCase
         $this->repository->delete($role);
         $this->assertNull($this->repository->findByName('temporary'));
     }
+
+    public function testRoleInheritance()
+    {
+        $admin = new Role(name: 'admin');
+        $editor = new Role(name: 'editor');
+
+        $this->repository->save($admin);
+
+        $editor->inherit($admin);
+        $this->repository->save($editor);
+
+        // Find without resolving
+        $foundSimple = $this->repository->findById($editor->id);
+        $this->assertCount(0, $foundSimple->parents);
+
+        // Find with resolving
+        $foundResolved = $this->repository->findById($editor->id, true);
+        $this->assertCount(1, $foundResolved->parents);
+        $this->assertEquals('admin', $foundResolved->parents[0]->name);
+    }
 }

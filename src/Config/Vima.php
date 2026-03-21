@@ -20,6 +20,8 @@ use Vima\Core\Config\RolePermissionColumns;
 use Vima\Core\Config\UserRoleColumns;
 use Vima\Core\Config\UserPermissionColumns;
 use Vima\CodeIgniter\Libraries\Setup as SetupLibrary;
+use Vima\Core\Config\RoleParentColumns;
+use Vima\Core\Contracts\SetupProviderInterface;
 
 class Vima extends BaseConfig
 {
@@ -37,6 +39,14 @@ class Vima extends BaseConfig
      * Declarative setup for roles and permissions.
      */
     public Setup $setup;
+
+    /**
+     * List of setup providers.
+     * @var class-string<SetupProviderInterface>[]
+     */
+    public array $providers = [
+        SetupLibrary::class,
+    ];
 
     /**
      * List of policy classes that implement PolicyInterface.
@@ -62,6 +72,21 @@ class Vima extends BaseConfig
      */
     public $routeSegmentResolver = null;
 
+    /**
+     * Whether to enable authorization results caching.
+     */
+    public bool $cacheEnabled = false;
+
+    /**
+     * Cache Time-To-Live in seconds.
+     */
+    public int $cacheTTL = 3600;
+
+    /**
+     * Prefix for cache keys.
+     */
+    public string $cachePrefix = 'vima:';
+
     public function __construct()
     {
         parent::__construct();
@@ -72,9 +97,30 @@ class Vima extends BaseConfig
             permissions: new PermissionColumns(),
             rolePermissions: new RolePermissionColumns(),
             userRoles: new UserRoleColumns(),
-            userPermissions: new UserPermissionColumns()
+            userPermissions: new UserPermissionColumns(),
+            roleParents: new RoleParentColumns()
         );
 
-        $this->setup = new Setup(...SetupLibrary::get());
+        $this->setup = $this->resolveSetup();
+    }
+
+    protected function resolveSetup(): Setup
+    {
+        $roles = [];
+        $permissions = [];
+
+        foreach ($this->providers as $provider) {
+            $data = new $provider()->get();
+
+            if (isset($data['roles'])) {
+                $roles = array_merge($roles, $data['roles']);
+            }
+
+            if (isset($data['permissions'])) {
+                $permissions = array_merge($permissions, $data['permissions']);
+            }
+        }
+
+        return new Setup($roles, $permissions);
     }
 }

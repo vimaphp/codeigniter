@@ -17,6 +17,7 @@ use Vima\CodeIgniter\Repositories\PermissionRepository;
 use Vima\CodeIgniter\Repositories\RolePermissionRepository;
 use Vima\CodeIgniter\Repositories\UserRoleRepository;
 use Vima\CodeIgniter\Repositories\UserPermissionRepository;
+use Vima\CodeIgniter\Repositories\UserDenyRepository;
 use Vima\Core\Config\VimaConfig;
 use Vima\Core\Contracts\AccessManagerInterface;
 use Vima\Core\Contracts\RoleRepositoryInterface;
@@ -24,6 +25,8 @@ use Vima\Core\Contracts\PermissionRepositoryInterface;
 use Vima\Core\Contracts\RolePermissionRepositoryInterface;
 use Vima\Core\Contracts\UserRoleRepositoryInterface;
 use Vima\Core\Contracts\UserPermissionRepositoryInterface;
+use Vima\Core\Contracts\UserDenyRepositoryInterface;
+use Vima\Core\Contracts\RoleParentRepositoryInterface;
 use Vima\Core\Services\AccessManager;
 use Vima\Core\Services\PolicyRegistry;
 use Vima\Core\Services\UserResolver;
@@ -37,7 +40,20 @@ use Vima\Core\Config\PermissionColumns;
 use Vima\Core\Config\UserRoleColumns;
 use Vima\Core\Config\RolePermissionColumns;
 use Vima\Core\Config\UserPermissionColumns;
+use Vima\Core\Config\UserDenyColumns;
+use Vima\Core\Config\RoleParentColumns;
 use Vima\Core\Config\Setup;
+use Vima\Core\Contracts\EventDispatcherInterface;
+use Vima\CodeIgniter\Support\CodeIgniterEventDispatcher;
+use Vima\Core\Contracts\PolicyRegistryInterface;
+use Vima\Core\Services\SyncService;
+use Vima\Core\Services\MapGenerator;
+use Vima\Core\Services\MappingService;
+use Vima\Core\Contracts\CacheInterface;
+use Vima\CodeIgniter\Services\CacheAdapter;
+use Vima\Core\Services\PermissionManager;
+use Vima\Core\Services\RoleManager;
+use function Vima\Core\resolve;
 
 if (!class_exists(Services::class, false)) {
     class Services extends BaseService
@@ -49,6 +65,8 @@ if (!class_exists(Services::class, false)) {
             }
 
             $ciConfig = config('Vima');
+            $setup = $ciConfig->setup ?? new Setup();
+
             return new VimaConfig(
                 tables: $ciConfig->tables ?? new Tables(),
                 columns: $ciConfig->columns ?? new Columns(
@@ -56,11 +74,25 @@ if (!class_exists(Services::class, false)) {
                     permissions: new PermissionColumns(),
                     userRoles: new UserRoleColumns(),
                     rolePermissions: new RolePermissionColumns(),
-                    userPermissions: new UserPermissionColumns()
+                    userPermissions: new UserPermissionColumns(),
+                    roleParents: new RoleParentColumns(),
+                    userDenies: new UserDenyColumns()
                 ),
-                setup: $ciConfig->setup ?? new Setup(),
-                userResolver: $ciConfig->userResolver ?? null
+                setup: $setup,
+                userResolver: $ciConfig->userResolver ?? null,
+                cacheEnabled: $ciConfig->cacheEnabled ?? false,
+                cacheTTL: $ciConfig->cacheTTL ?? 3600,
+                cachePrefix: $ciConfig->cachePrefix ?? 'vima:'
             );
+        }
+
+        public static function vima_cache(bool $getShared = true): CacheInterface
+        {
+            if ($getShared) {
+                return static::getSharedInstance('vima_cache');
+            }
+
+            return new CacheAdapter(cache());
         }
 
         /**
@@ -72,6 +104,9 @@ if (!class_exists(Services::class, false)) {
                 return static::getSharedInstance('vima');
             }
 
+            // reset to ensure new instance
+            DependencyContainer::reset();
+
             // Initialize Vima Core Container with CI4 implementations
             $container = DependencyContainer::getInstance();
 
@@ -80,14 +115,33 @@ if (!class_exists(Services::class, false)) {
             $container->register(RolePermissionRepositoryInterface::class, fn() => service('vima_role_permissions'));
             $container->register(UserRoleRepositoryInterface::class, fn() => service('vima_user_roles'));
             $container->register(UserPermissionRepositoryInterface::class, fn() => service('vima_user_permissions'));
+            $container->register(RoleParentRepositoryInterface::class, fn() => service('vima_role_parents'));
+            $container->register(UserDenyRepositoryInterface::class, fn() => service('vima_user_denies'));
 
-            $container->register(VimaConfig::class, service('vima_config'));
-            $container->register(PolicyRegistry::class, PolicyRegistry::instance());
+            $container->register(VimaConfig::class, fn() => service('vima_config'));
+            $container->register(CacheInterface::class, fn() => service('vima_cache'));
+
+            $container->register(PolicyRegistryInterface::class, PolicyRegistry::instance());
             $container->register(UserResolver::class, fn() => new UserResolver(service('vima_config')));
+
+            $container->register(EventDispatcherInterface::class, fn() => service('vima_events'));
+
+            // Register Manager services for auto-wiring
+            $container->register(RoleManager::class);
+            $container->register(PermissionManager::class);
 
             $container->register(AccessManagerInterface::class, AccessManager::class);
 
-            return $container->get(AccessManagerInterface::class);
+            // AccessManager itself
+            return resolve(AccessManagerInterface::class);
+        }
+
+        public static function vima_events(bool $getShared = true): EventDispatcherInterface
+        {
+            if ($getShared) {
+                return static::getSharedInstance('vima_events');
+            }
+            return new CodeIgniterEventDispatcher();
         }
 
         public static function vima_roles(bool $getShared = true): RoleRepositoryInterface
@@ -95,7 +149,7 @@ if (!class_exists(Services::class, false)) {
             if ($getShared) {
                 return static::getSharedInstance('vima_roles');
             }
-            return new RoleRepository();
+            return new RoleRepository(service('vima_events'));
         }
 
         public static function vima_permissions(bool $getShared = true): PermissionRepositoryInterface
@@ -103,7 +157,7 @@ if (!class_exists(Services::class, false)) {
             if ($getShared) {
                 return static::getSharedInstance('vima_permissions');
             }
-            return new PermissionRepository();
+            return new PermissionRepository(service('vima_events'));
         }
 
         public static function vima_role_permissions(bool $getShared = true): RolePermissionRepositoryInterface
@@ -128,6 +182,22 @@ if (!class_exists(Services::class, false)) {
                 return static::getSharedInstance('vima_user_permissions');
             }
             return new UserPermissionRepository();
+        }
+
+        public static function vima_user_denies(bool $getShared = true): UserDenyRepositoryInterface
+        {
+            if ($getShared) {
+                return static::getSharedInstance('vima_user_denies');
+            }
+            return new UserDenyRepository();
+        }
+
+        public static function vima_role_parents(bool $getShared = true): RoleParentRepositoryInterface
+        {
+            if ($getShared) {
+                return static::getSharedInstance('vima_role_parents');
+            }
+            return new \Vima\CodeIgniter\Repositories\RoleParentRepository();
         }
 
         /**
@@ -155,6 +225,36 @@ if (!class_exists(Services::class, false)) {
                 service('vima_config')->setup,
                 service('vima_roles'),
                 service('vima_permissions')
+            );
+        }
+
+        public static function vima_sync(bool $getShared = true): SyncService
+        {
+            if ($getShared) {
+                return static::getSharedInstance('vima_sync');
+            }
+
+            return new SyncService(
+                service('vima_roles'),
+                service('vima_permissions'),
+                service('vima_role_permissions'),
+                service('vima_events'),
+                service('vima_cache')
+            );
+        }
+
+        public static function vima_map_generator(bool $getShared = true): MapGenerator
+        {
+            if ($getShared) {
+                return static::getSharedInstance('vima_map_generator');
+            }
+
+            $rootPath = defined('ROOTPATH') ? ROOTPATH : getcwd() . DIRECTORY_SEPARATOR;
+            $mappingFile = $rootPath . '.vima' . DIRECTORY_SEPARATOR . 'mapping.json';
+
+            return new MapGenerator(
+                new MappingService($mappingFile),
+                service('vima_events')
             );
         }
     }

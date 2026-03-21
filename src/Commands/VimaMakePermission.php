@@ -8,44 +8,43 @@
  * file that was distributed with this source code.
  */
 
-
 namespace Vima\CodeIgniter\Commands;
 
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 use Vima\Core\Services\AccessManager;
 
-class VimaMakeRole extends BaseCommand
+class VimaMakePermission extends BaseCommand
 {
     protected $group = 'Vima';
-    protected $name = 'vima:make-role';
-    protected $description = 'Create a new role';
-    protected $usage = 'vima:make-role [name] [options]';
+    protected $name = 'vima:make-permission';
+    protected $description = 'Create a new permission';
+    protected $usage = 'vima:make-permission [name] [options]';
     protected $options = [
-        'namespace'   => 'Namespace for the role',
-        'description' => 'Description for the role',
+        'namespace'   => 'Namespace for the permission',
+        'description' => 'Description for the permission',
     ];
 
     public function run(array $params)
     {
-        $name = $params[0] ?? CLI::prompt('Role name');
+        $name = $params[0] ?? CLI::prompt('Permission name');
         $namespace = CLI::getOption('namespace');
         $description = CLI::getOption('description') ?? $params[1] ?? '';
 
         try {
             /** @var AccessManager $manager */
             $manager = service('vima');
-            $role = $manager->ensureRole($name, $description, $namespace);
+            $permission = $manager->ensurePermission($name, $description, $namespace);
             
-            $msg = "Role [{$role->name}]";
-            if ($role->namespace) {
-                $msg .= " in namespace [{$role->namespace}]";
+            $msg = "Permission [{$permission->name}]";
+            if ($permission->namespace) {
+                $msg .= " in namespace [{$permission->namespace}]";
             }
             $msg .= " created successfully.";
 
             CLI::write($msg, 'green');
         } catch (\Throwable $e) {
-            CLI::error("Failed to create role: " . $e->getMessage());
+            CLI::error("Failed to create permission: " . $e->getMessage());
         }
     }
 }

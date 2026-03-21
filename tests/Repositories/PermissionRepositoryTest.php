@@ -47,4 +47,20 @@ class PermissionRepositoryTest extends VimaTestCase
         $this->repository->delete($permission);
         $this->assertNull($this->repository->findByName('temporary'));
     }
+
+    public function testSaveDuplicateNameUpdatesExisting()
+    {
+        $p1 = new Permission(name: 'posts.create', namespace: 'blog', description: 'Old desc');
+        $this->repository->save($p1);
+
+        $p2 = new Permission(name: 'posts.create', namespace: 'blog', description: 'New desc');
+        $saved = $this->repository->save($p2);
+
+        $this->assertEquals($p1->id, $saved->id);
+        $this->assertEquals('New desc', $saved->description);
+        
+        $tableName = service('vima_config')->tables->permissions;
+        $count = $this->db->table($tableName)->where('name', 'posts.create')->where('namespace', 'blog')->countAllResults();
+        $this->assertEquals(1, $count);
+    }
 }

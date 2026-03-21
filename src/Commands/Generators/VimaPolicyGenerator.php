@@ -23,14 +23,14 @@ class VimaPolicyGenerator extends BaseCommand
      *
      * @var string
      */
-    protected $group = 'Generators';
+    protected $group = 'Vima';
 
     /**
      * The Command's Name
      *
      * @var string
      */
-    protected $name = 'vima:make:policy';
+    protected $name = 'vima:make-policy';
 
     /**
      * The Command's Description

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a106a91fc912e2e215181364c1beae63",
+    "content-hash": "d17356cff7c584e7f11bece6b152f104",
     "packages": [
         {
             "name": "codeigniter4/framework",
@@ -1013,16 +1013,16 @@
         },
         {
             "name": "vima/core",
-            "version": "v0.2.4",
+            "version": "v0.2.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vimaphp/vima-core.git",
-                "reference": "2fa9387475820cfa0f9976506e8bea6072f3c4d4"
+                "reference": "7fdc9a88af971e935ff16cccc637b981823c22a4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vimaphp/vima-core/zipball/2fa9387475820cfa0f9976506e8bea6072f3c4d4",
-                "reference": "2fa9387475820cfa0f9976506e8bea6072f3c4d4",
+                "url": "https://api.github.com/repos/vimaphp/vima-core/zipball/7fdc9a88af971e935ff16cccc637b981823c22a4",
+                "reference": "7fdc9a88af971e935ff16cccc637b981823c22a4",
                 "shasum": ""
             },
             "require": {
@@ -1058,9 +1058,9 @@
             "description": "Framework-agnostic RBAC + ABAC access control engine with pluggable storage backends and a built-in CLI.",
             "support": {
                 "issues": "https://github.com/vimaphp/vima-core/issues",
-                "source": "https://github.com/vimaphp/vima-core/tree/v0.2.4"
+                "source": "https://github.com/vimaphp/vima-core/tree/v0.2.5"
             },
-            "time": "2026-03-10T19:05:02+00:00"
+            "time": "2026-03-21T22:06:21+00:00"
         }
     ],
     "packages-dev": [
@@ -2100,16 +2100,16 @@
         },
         {
             "name": "sebastian/environment",
-            "version": "9.0.0",
+            "version": "9.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/environment.git",
-                "reference": "bb64d08145b021b67d5f253308a498b73ab0461e"
+                "reference": "e26e9a944bd9d27b3a38a82fc2093d440951bfbe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/environment/zipball/bb64d08145b021b67d5f253308a498b73ab0461e",
-                "reference": "bb64d08145b021b67d5f253308a498b73ab0461e",
+                "url": "https://api.github.com/repos/sebastianbergmann/environment/zipball/e26e9a944bd9d27b3a38a82fc2093d440951bfbe",
+                "reference": "e26e9a944bd9d27b3a38a82fc2093d440951bfbe",
                 "shasum": ""
             },
             "require": {
@@ -2152,7 +2152,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/environment/issues",
                 "security": "https://github.com/sebastianbergmann/environment/security/policy",
-                "source": "https://github.com/sebastianbergmann/environment/tree/9.0.0"
+                "source": "https://github.com/sebastianbergmann/environment/tree/9.0.1"
             },
             "funding": [
                 {
@@ -2172,7 +2172,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-06T04:43:29+00:00"
+            "time": "2026-03-15T07:13:02+00:00"
         },
         {
             "name": "sebastian/exporter",

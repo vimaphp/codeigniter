@@ -19,12 +19,16 @@ class VimaAssignRole extends BaseCommand
     protected $group = 'Vima';
     protected $name = 'vima:assign-role';
     protected $description = 'Assign a role to a user';
-    protected $usage = 'vima:assign-role [user_id] [role_name]';
+    protected $usage = 'vima:assign-role [user_id] [role_name] [options]';
+    protected $options = [
+        'namespace' => 'Namespace for the role',
+    ];
 
     public function run(array $params)
     {
         $userId = $params[0] ?? CLI::prompt('User ID');
         $roleName = $params[1] ?? CLI::prompt('Role Name');
+        $namespace = CLI::getOption('namespace');
 
         try {
             $manager = service('vima');
@@ -38,8 +42,15 @@ class VimaAssignRole extends BaseCommand
                     return $this->id; }
             };
 
-            $manager->assignRole($user, $roleName);
-            CLI::write("Role [{$roleName}] assigned to user [{$userId}] successfully.", 'green');
+            $manager->assignRole($user, $roleName, $namespace);
+            
+            $msg = "Role [{$roleName}]";
+            if ($namespace) {
+                $msg .= " in namespace [{$namespace}]";
+            }
+            $msg .= " assigned to user [{$userId}] successfully.";
+
+            CLI::write($msg, 'green');
         } catch (\Throwable $e) {
             CLI::error("Failed to assign role: " . $e->getMessage());
         }
