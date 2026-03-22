@@ -22,6 +22,7 @@ use Vima\Core\Config\UserRoleColumns;
 use Vima\Core\Config\UserPermissionColumns;
 use Vima\CodeIgniter\Libraries\Setup as SetupLibrary;
 use Vima\Core\Config\RoleParentColumns;
+use Vima\Core\Contracts\PolicyInterface;
 use Vima\Core\Contracts\PolicyRegistryInterface;
 use Vima\Core\Contracts\SetupProviderInterface;
 use Vima\Core\Services\PolicyRegistry;
