@@ -111,6 +111,7 @@ class VimaSetup extends BaseCommand
         // Strip the constructor and the resolveSetup method definition
         $content = preg_replace('/    public function __construct\(.*?\n    \}/s', '', $content);
         $content = preg_replace('/    protected function resolveSetup\(.*?\n    \}/s', '', $content);
+        $content = preg_replace('/    private function registerPolicies\(.*?\n    \}/s', '', $content);
 
         // Remove unused class imports
         $unusedNodes = [
@@ -125,7 +126,7 @@ class VimaSetup extends BaseCommand
         foreach ($unusedNodes as $node) {
             $content = preg_replace('/use ' . preg_quote($node, '/') . ";\n/", '', $content);
         }
-        
+
         // Clean up any double blank lines at the end of the class
         $content = preg_replace('/\n\s*\n\}/', "\n}", $content);
 

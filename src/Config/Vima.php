@@ -11,6 +11,7 @@
 namespace Vima\CodeIgniter\Config;
 
 use CodeIgniter\Config\BaseConfig;
+use RuntimeException;
 use Vima\Core\Config\Setup;
 use Vima\Core\Config\Tables;
 use Vima\Core\Config\Columns;
@@ -21,7 +22,10 @@ use Vima\Core\Config\UserRoleColumns;
 use Vima\Core\Config\UserPermissionColumns;
 use Vima\CodeIgniter\Libraries\Setup as SetupLibrary;
 use Vima\Core\Config\RoleParentColumns;
+use Vima\Core\Contracts\PolicyRegistryInterface;
 use Vima\Core\Contracts\SetupProviderInterface;
+use Vima\Core\Services\PolicyRegistry;
+use function Vima\Core\resolve;
 
 class Vima extends BaseConfig
 {
@@ -102,6 +106,7 @@ class Vima extends BaseConfig
         );
 
         $this->setup = $this->resolveSetup();
+        $this->registerPolicies();
     }
 
     protected function resolveSetup(): Setup
@@ -122,5 +127,26 @@ class Vima extends BaseConfig
         }
 
         return new Setup($roles, $permissions);
+    }
+    private function registerPolicies()
+    {
+        /**
+         * @var PolicyRegistry
+         */
+        $policyRegistry = resolve(PolicyRegistryInterface::class);
+
+        foreach ($this->policies as $p) {
+            if (!class_exists($p)) {
+                throw new RuntimeException("[Vima] Class $p does not exist");
+            }
+
+            $instance = new $p();
+
+            if (!($instance instanceof PolicyInterface)) {
+                throw new RuntimeException("[Vima] Policy class $p is invalid. Policies must implement PolicyInterface::class");
+            }
+
+            $policyRegistry->registerClass($instance::getResource(), $p);
+        }
     }
 }
