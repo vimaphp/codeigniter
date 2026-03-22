@@ -14,6 +14,7 @@ namespace Vima\CodeIgniter\Commands;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 
+use Vima\CodeIgniter\Support\Utils;
 use Vima\Core\Contracts\RoleRepositoryInterface;
 
 class VimaRoleList extends BaseCommand
@@ -48,38 +49,35 @@ class VimaRoleList extends BaseCommand
             $children = implode(', ', array_map(fn($r) => $r->namespace ? "{$r->namespace}:{$r->name}" : $r->name, $role->children)) ?: '[--NONE--]';
             $permissions = implode(', ', array_map(fn($p) => $p->namespace ? "{$p->namespace}:{$p->name}" : $p->name, $role->permissions)) ?: '[--NONE--]';
 
-            $body[] = [
+            $row = [
                 $role->id,
                 $role->namespace ?? '[--GLOBAL--]',
                 $role->name,
-                $this->truncate($role->description, $limit),
-                $this->truncate(json_encode($role->context), $limit),
-                $this->truncate($permissions, $limit)
+                Utils::truncate($role->description, $limit),
+                Utils::truncate(json_encode($role->context), $limit),
+                Utils::truncate($permissions, $limit)
             ];
 
             if ($resolve) {
-                $body[] = [
-                    $this->truncate($parents, $limit),
-                    $this->truncate($children, $limit),
+                $row = [
+                    ...$row,
+                    ...[
+                        Utils::truncate($parents, $limit),
+                        Utils::truncate($children, $limit)
+                    ]
                 ];
             }
+
+            $body[] = $row;
         }
 
         $thead = ['ID', 'Namespace', 'Name', 'Description', 'Context', 'Permissions'];
 
         if ($resolve) {
-            $thead = array_merge($thead, ['Parents', 'Children']);
+            $thead[] = 'Parents';
+            $thead[] = 'Children';
         }
 
         CLI::table($body, $thead);
-    }
-
-    private function truncate(string $text, int $limit): string
-    {
-        if (strlen($text) <= $limit) {
-            return $text;
-        }
-
-        return substr($text, 0, $limit - 3) . '...';
     }
 }

@@ -14,14 +14,15 @@ namespace Vima\CodeIgniter\Commands;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 
+use Vima\CodeIgniter\Support\Utils;
 use Vima\Core\Contracts\PermissionRepositoryInterface;
 
 class VimaPermissionList extends BaseCommand
 {
     protected $group = 'Vima';
-    protected $name = 'vima:role-list';
-    protected $description = 'List all roles';
-    protected $usage = 'vima:role-list [options]';
+    protected $name = 'vima:perm-list';
+    protected $description = 'List all permssions';
+    protected $usage = 'vima:perm-list [options]';
     protected $options = [
         'limit' => 'Limit the number of characters in list columns (default: 50)',
     ];
@@ -45,7 +46,7 @@ class VimaPermissionList extends BaseCommand
                 $perm->id,
                 $perm->namespace ?? '[--GLOBAL--]',
                 $perm->name,
-                $this->truncate($perm->description, $limit),
+                Utils::truncate($perm->description, $limit),
             ];
         }
 

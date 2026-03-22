@@ -11,15 +11,12 @@ class VimaPermitRole extends BaseCommand
     protected $name = 'vima:permit-role';
     protected $description = 'Permit a role to perform a permission';
     protected $usage = 'vima:permit-role [role_name] [permission_name] [options] (You can pass namespaces to the role or permssion using \':\' to prefix the namespace)';
-    protected $options = [
-        'role' => 'The role to permit',
-        'permission' => 'The permission to permit',
-    ];
+    protected $options = [];
 
     public function run(array $params)
     {
-        $role = $params[0] ?? CLI::getOption('role');
-        $permission = $params[1] ?? CLI::getOption('permission');
+        $role = $params[0] ?? CLI::prompt('Role name', null, 'required');
+        $permission = $params[1] ?? CLI::prompt('Permission name', null, 'required');
 
         if (empty($role) || empty($permission)) {
             CLI::write('Role and permission are required.', 'red');
@@ -27,15 +24,16 @@ class VimaPermitRole extends BaseCommand
         }
 
         try {
-            $role = service('vima_roles')->find($role);
-            $permission = service('vima_permissions')->find($permission);
+            $role = service('vima')->getRole($role);
+            $permission = service('vima')->getPermission($permission);
 
             if (empty($role) || empty($permission)) {
                 CLI::write('Role or permission not found.', 'red');
                 return;
             }
 
-            $role->addPermission($permission);
+            $role->permit($permission);
+            $role->save();
             CLI::write('Role permitted to perform permission.', 'green');
         } catch (\Exception $e) {
             CLI::write($e->getMessage(), 'red');

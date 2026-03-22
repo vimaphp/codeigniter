@@ -28,7 +28,7 @@ class VimaPermitUser extends BaseCommand
         $user = Utils::creatVimaUser($user_id);
 
         try {
-            $permission = service('vima_permissions')->find($permission);
+            $permission = service('vima')->getPermission($permission);
 
             if (empty($permission)) {
                 CLI::write('Permission not found.', 'red');
@@ -40,7 +40,7 @@ class VimaPermitUser extends BaseCommand
                 $permission->id
             );
 
-            service('vima_user_permissions')->save($userPermission);
+            service('vima_user_permissions')->add($userPermission);
 
             CLI::write('User permitted to perform permission.', 'green');
         } catch (\Exception $e) {

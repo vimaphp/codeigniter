@@ -40,27 +40,30 @@ class VimaUserRoles extends BaseCommand
                 $children = implode(', ', array_map(fn($r) => $r->namespace ? "{$r->namespace}:{$r->name}" : $r->name, $role->children)) ?: '[--NONE--]';
                 $permissions = implode(', ', array_map(fn($p) => $p->namespace ? "{$p->namespace}:{$p->name}" : $p->name, $role->permissions)) ?: '[--NONE--]';
 
-                $body[] = [
+                $row = [
                     $this->truncate($role->id, $limit),
                     $this->truncate($role->namespace ?? '[--GLOBAL--]', $limit),
                     $this->truncate($role->name, $limit),
                     $this->truncate($role->description, $limit),
                     $this->truncate(json_encode($role->context ?? []), $limit),
-                    $this->truncate($permissions, $limit),
                 ];
 
                 if ($resolve) {
-                    $body[] = [
+                    $row = [
+                        ...$row,
+                        $this->truncate($permissions, $limit),
                         $this->truncate($parents, $limit),
                         $this->truncate($children, $limit),
                     ];
                 }
+
+                $body[] = $row;
             }
 
-            $thead = ['ID', 'Namespace', 'Name', 'Context'];
+            $thead = ['ID', 'Namespace', 'Name', 'Description', 'Context'];
 
             if ($resolve) {
-                $thead = array_merge($thead, ['Parents', 'Children', 'Permissions']);
+                $thead = array_merge($thead, ['Permissions', 'Parents', 'Children']);
             }
 
             CLI::table($body, $thead);
