@@ -49,7 +49,7 @@ class VimaPublishAI extends BaseCommand
      * @var array
      */
     protected $options = [
-        'ide'       => 'The target IDE/Agent (cursor, windsurf, vscode, cline, roocode, vima, jetbrains, all)',
+        'ide' => 'The target IDE/Agent (cursor, windsurf, vscode, cline, roocode, vima, jetbrains, all)',
         'overwrite' => 'Overwrite existing files',
     ];
 
@@ -59,12 +59,12 @@ class VimaPublishAI extends BaseCommand
      * @var array
      */
     protected $locations = [
-        'cursor'    => '.cursor/rules/vima.md',
-        'windsurf'  => '.windsurf/rules/vima.md',
-        'vscode'    => '.github/rules/vima.md',
-        'cline'     => '.cline/rules/vima.md',
-        'roocode'   => '.roo/rules/vima.md',
-        'vima'      => '.agent/skills/vima/SKILL.md',
+        'cursor' => '.cursor/rules/vima.md',
+        'windsurf' => '.windsurf/rules/vima.md',
+        'vscode' => '.github/rules/vima.md',
+        'cline' => '.cline/rules/vima.md',
+        'roocode' => '.roo/rules/vima.md',
+        'antigravity' => '.agent/skills/vima/SKILL.md',
         'jetbrains' => '.jetbrains/rules/vima.md',
     ];
 
@@ -75,14 +75,14 @@ class VimaPublishAI extends BaseCommand
      */
     public function run(array $params)
     {
-        $ide       = CLI::getOption('ide');
+        $ide = CLI::getOption('ide');
         $overwrite = !!CLI::getOption('overwrite');
 
         if (empty($ide)) {
             $options = array_keys($this->locations);
             sort($options);
             $options[] = 'all';
-            
+
             $ide = CLI::prompt('Choose target IDE/Agent to publish guidance for', $options);
         }
 
@@ -105,7 +105,7 @@ class VimaPublishAI extends BaseCommand
     protected function publish(string $id, string $filename, bool $overwrite)
     {
         $source = __DIR__ . '/../../AI/SKILL.md';
-        
+
         // In a package context, we need to find the AI folder. 
         if (!file_exists($source)) {
             // Fallback for when running from a different location if necessary
@@ -139,7 +139,7 @@ class VimaPublishAI extends BaseCommand
 
         if (copy($source, $dest)) {
             CLI::write("Published AI guidance for {$id} to {$filename}", 'green');
-            
+
             // Also publish workflows if the target supports them (like Vima agent)
             if ($id === 'vima') {
                 $this->publishWorkflows();
@@ -155,7 +155,7 @@ class VimaPublishAI extends BaseCommand
     protected function publishWorkflows()
     {
         $sourceDir = __DIR__ . '/../../AI/workflows';
-        $destDir   = ROOTPATH . '.agent/skills/vima/workflows';
+        $destDir = ROOTPATH . '.agent/skills/vima/workflows';
 
         if (!is_dir($sourceDir)) {
             return;
