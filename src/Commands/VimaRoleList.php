@@ -21,18 +21,21 @@ class VimaRoleList extends BaseCommand
     protected $group = 'Vima';
     protected $name = 'vima:role-list';
     protected $description = 'List all roles';
-    protected $usage       = 'vima:role-list [options]';
-    protected $options     = [
-        'limit' => 'Limit the number of characters in list columns (default: 50)',
+    protected $usage = 'vima:role-list [options]';
+    protected $options = [
+        'limit' => 'Limit the number of characters in list columns (default: 30)',
+        'resolve' => 'Resolve role parents and children',
     ];
 
     public function run(array $params)
     {
-        $limit = (int) (isset($params['limit']) ? $params['limit'] : (CLI::getOption('limit') ?? 50));
+        $limit = (int) (isset($params['limit']) ? $params['limit'] : (CLI::getOption('limit') ?? 30));
+        $resolve = (bool) (isset($params['resolve']) ? $params['resolve'] : (CLI::getOption('resolve') ?? false));
 
         /** @var RoleRepositoryInterface $roleRepo */
         $roleRepo = service('vima_roles');
-        $roles = $roleRepo->all(resolve: true);
+        $roles = $roleRepo->all(resolve: $resolve);
+
 
         if (empty($roles)) {
             CLI::write('No roles found.', 'yellow');
@@ -49,15 +52,26 @@ class VimaRoleList extends BaseCommand
                 $role->id,
                 $role->namespace ?? '[--GLOBAL--]',
                 $role->name,
-                $role->description,
-                json_encode($role->context),
-                $this->truncate($parents, $limit),
-                $this->truncate($children, $limit),
+                $this->truncate($role->description, $limit),
+                $this->truncate(json_encode($role->context), $limit),
                 $this->truncate($permissions, $limit)
             ];
+
+            if ($resolve) {
+                $body[] = [
+                    $this->truncate($parents, $limit),
+                    $this->truncate($children, $limit),
+                ];
+            }
         }
 
-        CLI::table($body, ['ID', 'Namespace', 'Name', 'Description', 'Context', 'Parents', 'Children', 'Permissions']);
+        $thead = ['ID', 'Namespace', 'Name', 'Description', 'Context', 'Permissions'];
+
+        if ($resolve) {
+            $thead = array_merge($thead, ['Parents', 'Children']);
+        }
+
+        CLI::table($body, $thead);
     }
 
     private function truncate(string $text, int $limit): string
