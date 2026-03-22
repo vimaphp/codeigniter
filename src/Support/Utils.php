@@ -2,21 +2,13 @@
 
 namespace Vima\CodeIgniter\Support;
 
+use Vima\Core\Entities\User;
+
 final class Utils
 {
-    public static function creatVimaUser(int|string $id): object
+    public static function creatVimaUser(int|string $id): User
     {
-        $user = new class () {
-            public $id;
-            public function vimaGetId()
-            {
-                return $this->id;
-            }
-        };
-
-        $user->id = $id;
-
-        return $user;
+        return User::define($id);
     }
 
     public static function truncate(mixed $text, int $limit, string $onNull = '[--NONE--]'): string

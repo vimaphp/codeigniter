@@ -34,7 +34,7 @@ class UserDenyRepository implements UserDenyRepositoryInterface
         $this->columns = $columns ?? new Columns(); // This usually comes from global config
     }
 
-    public function add(string|int $user_id, string|int $permission_id): void
+    public function add(string|int $user_id, string|int $permission_id, ?string $reason = null): void
     {
         $cols = $this->columns->userDenies;
         
@@ -47,6 +47,13 @@ class UserDenyRepository implements UserDenyRepositoryInterface
             $this->model->insert([
                 $cols->userId => $user_id,
                 $cols->permissionId => $permission_id,
+                $cols->reason => $reason,
+                $cols->createdAt => date('Y-m-d H:i:s'),
+            ]);
+        } else {
+            // Update reason if it changed
+            $this->model->update($exists['id'], [
+                $cols->reason => $reason,
             ]);
         }
     }
@@ -78,22 +85,30 @@ class UserDenyRepository implements UserDenyRepositoryInterface
         $tables = \config('Vima')->tables;
 
         $results = $this->model->db->table($tables->userDenies)
-            ->select($tables->permissions . '.*')
+            ->select($tables->permissions . '.*, ' . $tables->userDenies . '.*')
             ->join($tables->permissions, $tables->permissions . '.' . $permCols->id . ' = ' . $tables->userDenies . '.' . $cols->permissionId)
             ->where($tables->userDenies . '.' . $cols->userId, $user_id)
             ->get()
             ->getResult();
 
-        $permissions = [];
+        $denies = [];
         foreach ($results as $row) {
-            $permissions[] = new Permission(
+            $permission = new Permission(
                 $row->{$permCols->name},
                 $row->{$permCols->description} ?? null,
                 $row->{$permCols->namespace} ?? null,
                 $row->{$permCols->id}
             );
+
+            $denies[] = new \Vima\Core\Entities\UserDeny(
+                user_id: $row->{$cols->userId},
+                permission_id: $row->{$cols->permissionId},
+                id: (int) $row->id,
+                reason: $row->{$cols->reason} ?? null,
+                permission: $permission
+            );
         }
 
-        return $permissions;
+        return $denies;
     }
 }
