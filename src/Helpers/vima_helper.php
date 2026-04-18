@@ -66,6 +66,45 @@ if (!function_exists('can')) {
     }
 }
 
+
+if (!function_exists("can_any")) {
+    /**
+     * Performs authorization checks on each permssion given and returns true on the first permitted action
+     * @param array $permissions
+     * @param array $arguments
+     * @return bool
+     */
+    function can_any(array $permissions, ...$arguments): bool
+    {
+        foreach ($permissions as $perm) {
+            if (can($perm, ...$arguments)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists("can_all")) {
+    /**
+     * Performs authorization checks on each permssion given and returns false on the first non-permitted action
+     * @param array $permissions
+     * @param array $arguments
+     * @return bool
+     */
+    function can_all(array $permissions, ...$arguments): bool
+    {
+        foreach ($permissions as $perm) {
+            if (!can($perm, ...$arguments)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
 if (!function_exists('vima_context')) {
     /**
      * Get or set request-scoped context object.

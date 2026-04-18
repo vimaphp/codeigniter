@@ -11,7 +11,6 @@
 namespace Vima\CodeIgniter\Traits;
 
 use Vima\Core\Exceptions\AccessDeniedException;
-use Vima\Core\Entities\Permission;
 
 /**
  * Trait VimaTrait
@@ -22,29 +21,44 @@ trait VimaTrait
 {
     /**
      * Authorize the current user for the given permission.
-     * 
-     * Supports both:
-     * 1. $this->authorize('permission', $resource, ...$args)
-     * 2. $this->authorize($resource, 'permission', ...$args)
      *
      * @param mixed $permission Or resource object
      * @param mixed ...$arguments
      * @throws AccessDeniedException
      */
-    protected function authorize($permission, ...$arguments): void
+    protected function authorize(string $permission, ...$arguments): void
     {
-        // Detect reversed arguments: authorize($resource, $permission)
-        if (is_object($permission) && !($permission instanceof Permission) && count($arguments) > 0) {
-            $resource = $permission;
-            $actualPermission = $arguments[0];
-            $remainingArgs = array_slice($arguments, 1);
-
-            $permission = $actualPermission;
-            $arguments = array_merge([$resource], $remainingArgs);
-        }
-
-        if (!can((string) $permission, ...$arguments)) {
+        if (!$this->can((string) $permission, ...$arguments)) {
             throw AccessDeniedException::forPermission((string) $permission);
+        }
+    }
+
+    /**
+     * Authorizes any of the permssions provided. Throws an exception if all are forbidden
+     * @param array $permissions
+     * @param array $arguments
+     * @throws AccessDeniedException
+     * @return void
+     */
+    protected function authorize_any(array $permissions, ...$arguments): void
+    {
+        if (!$this->can_any($permissions, ...$arguments)) {
+            throw AccessDeniedException::forPermission(implode(' or ', $permissions));
+        }
+    }
+
+
+    /**
+     * Authorizes all of the permssions provided. Throws an exception if any is forbidden
+     * @param array $permissions
+     * @param array $arguments
+     * @throws AccessDeniedException
+     * @return void
+     */
+    protected function authorize_all(array $permissions, ...$arguments): void
+    {
+        if (!$this->can_all($permissions, ...$arguments)) {
+            throw AccessDeniedException::forPermission(implode(' or ', $permissions));
         }
     }
 
@@ -58,5 +72,27 @@ trait VimaTrait
     protected function can(string $permission, ...$arguments): bool
     {
         return can($permission, ...$arguments);
+    }
+
+    /**
+     * Performs a can check on all of the permissions provided and returns true on the first permissible action for the current user
+     * @param array $permissions
+     * @param array $arguments
+     * @return bool
+     */
+    protected function can_any(array $permissions, ...$arguments): bool
+    {
+        return can_any($permissions, ...$arguments);
+    }
+
+    /**
+     * Performs a can check on all of the permissions provided and returns true on the first impermissible action for the current user
+     * @param array $permissions
+     * @param array $arguments
+     * @return bool
+     */
+    protected function can_all(array $permissions, ...$arguments): bool
+    {
+        return can_any($permissions, ...$arguments);
     }
 }
