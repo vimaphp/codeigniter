@@ -28,4 +28,10 @@ abstract class VimaTestCase extends CIUnitTestCase
         $migrate->down();
         parent::tearDown();
     }
+
+    public static function setupBeforeClass(): void
+    {
+        helper('vima');
+        vima();
+    }
 }

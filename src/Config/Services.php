@@ -149,7 +149,7 @@ if (!class_exists(Services::class, false)) {
             if ($getShared) {
                 return static::getSharedInstance('vima_roles');
             }
-            return new RoleRepository(service('vima_events'));
+            return new RoleRepository();
         }
 
         public static function vima_permissions(bool $getShared = true): PermissionRepositoryInterface
@@ -157,7 +157,7 @@ if (!class_exists(Services::class, false)) {
             if ($getShared) {
                 return static::getSharedInstance('vima_permissions');
             }
-            return new PermissionRepository(service('vima_events'));
+            return new PermissionRepository();
         }
 
         public static function vima_role_permissions(bool $getShared = true): RolePermissionRepositoryInterface

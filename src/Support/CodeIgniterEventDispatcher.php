@@ -34,15 +34,15 @@ class CodeIgniterEventDispatcher implements EventDispatcherInterface
     {
         $name = method_exists($event, 'getName') ? $event->getName() : get_class($event);
 
-        // Events::trigger($name, $event);
+        Events::trigger($name, $event);
 
         // Also trigger the class name for backward compatibility or more specific listeners
-        // if ($name !== get_class($event)) {
-        //     Events::trigger(get_class($event), $event);
-        // }
+        if ($name !== get_class($event)) {
+            Events::trigger(get_class($event), $event);
+        }
 
         // Also fire a generic "vima.event" for easier global catching
-        // Events::trigger('vima.event', $event);
+        Events::trigger('vima.event', $event);
 
         return $event;
     }

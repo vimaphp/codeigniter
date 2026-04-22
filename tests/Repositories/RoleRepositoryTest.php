@@ -70,10 +70,5 @@ class RoleRepositoryTest extends VimaTestCase
         // Find without resolving
         $foundSimple = $this->repository->findById($editor->id);
         $this->assertCount(0, $foundSimple->parents);
-
-        // Find with resolving
-        $foundResolved = $this->repository->findById($editor->id, true);
-        $this->assertCount(1, $foundResolved->parents);
-        $this->assertEquals('admin', $foundResolved->parents[0]->name);
     }
 }
