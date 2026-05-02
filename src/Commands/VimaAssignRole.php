@@ -13,6 +13,8 @@ namespace Vima\CodeIgniter\Commands;
 
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
+use Vima\CodeIgniter\Support\Utils;
+use Vima\Core\Contracts\AccessManagerInterface;
 
 class VimaAssignRole extends BaseCommand
 {
@@ -31,19 +33,20 @@ class VimaAssignRole extends BaseCommand
         $namespace = CLI::getOption('namespace');
 
         try {
+            /**
+             * @var AccessManagerInterface
+             */
             $manager = service('vima');
 
-            // Temporary user object for resolution
-            $user = new class ($userId) {
-                public function __construct(public $id)
-                {}
-                public function vimaGetId()
-                {
-                    return $this->id; }
-            };
+            if (!str_contains($roleName, ':') && $namespace) {
+                $roleName = "$namespace:$roleName";
+            }
 
-            $manager->assignRole($user, $roleName, $namespace);
-            
+            // Temporary user object for resolution
+            $user = Utils::creatVimaUser($userId);
+
+            $manager->assignRole($user, $roleName);
+
             $msg = "Role [{$roleName}]";
             if ($namespace) {
                 $msg .= " in namespace [{$namespace}]";

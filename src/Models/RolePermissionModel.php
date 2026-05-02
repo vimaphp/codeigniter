@@ -27,6 +27,6 @@ class RolePermissionModel extends Model
         parent::__construct();
         $cols = service('vima_config')->columns->rolePermissions;
         $this->table = service('vima_config')->tables->rolePermissions;
-        $this->allowedFields = [$cols->roleId, $cols->permissionId];
+        $this->allowedFields = [$cols->roleId, $cols->permissionId, $cols->constraints];
     }
 }

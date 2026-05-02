@@ -22,10 +22,10 @@ class ContextStorage
     /**
      * Set the current context resource.
      * 
-     * @param object $obj
+     * @param object|null $obj
      * @return void
      */
-    public function set(object $obj): void
+    public function set(?object $obj): void
     {
         $this->data = $obj;
     }

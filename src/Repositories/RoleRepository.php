@@ -12,7 +12,7 @@
 namespace Vima\CodeIgniter\Repositories;
 
 use Vima\Core\Contracts\RoleRepositoryInterface;
-use Vima\Core\Entities\Role;
+use Vima\Core\Entities\Bare\BareRole;
 use Vima\CodeIgniter\Models\RoleModel;
 
 class RoleRepository implements RoleRepositoryInterface
@@ -24,38 +24,24 @@ class RoleRepository implements RoleRepositoryInterface
         $this->model = new RoleModel();
     }
 
-    private static array $loading = [];
-
-    public function findById(int|string $id): ?Role
+    public function findById(int|string $id): ?BareRole
     {
-        if (isset(self::$loading[$id])) {
-            return null; // Prevent deep/circular recursion
+        $cols = service('vima_config')->columns->roles;
+        $data = $this->model->asArray()->find($id);
+        if (!$data) {
+            return null;
         }
 
-        self::$loading[$id] = true;
-
-        try {
-            $cols = service('vima_config')->columns->roles;
-            $data = $this->model->asArray()->find($id);
-            if (!$data) {
-                return null;
-            }
-
-            $role = new Role(
-                name: $data[$cols->name],
-                namespace: $data[$cols->namespace] ?? null,
-                id: $data[$cols->id],
-                description: $data[$cols->description] ?? null,
-                context: isset($data[$cols->context]) ? json_decode($data[$cols->context], true) : [],
-            );
-
-            return $role;
-        } finally {
-            unset(self::$loading[$id]);
-        }
+        return new BareRole(
+            id: $data[$cols->id],
+            name: $data[$cols->name],
+            namespace: $data[$cols->namespace] ?? null,
+            description: $data[$cols->description] ?? null,
+            context: isset($data[$cols->context]) ? json_decode($data[$cols->context], true) : [],
+        );
     }
 
-    public function findByName(string $name, ?string $namespace = null): ?Role
+    public function findByName(string $name, ?string $namespace = null): ?BareRole
     {
         $cols = service('vima_config')->columns->roles;
         $query = $this->model->asArray()->where($cols->name, $name);
@@ -74,10 +60,10 @@ class RoleRepository implements RoleRepositoryInterface
             return null;
         }
 
-        return new Role(
+        return new BareRole(
+            id: $data[$cols->id],
             name: $data[$cols->name],
             namespace: $data[$cols->namespace] ?? null,
-            id: $data[$cols->id],
             description: $data[$cols->description] ?? null,
             context: isset($data[$cols->context]) ? json_decode($data[$cols->context], true) : [],
         );
@@ -94,10 +80,16 @@ class RoleRepository implements RoleRepositoryInterface
 
         $all = $query->findAll();
 
-        return array_map(fn($data) => $this->findById($data[$cols->id]), $all);
+        return array_map(fn($data) => new BareRole(
+            id: $data[$cols->id],
+            name: $data[$cols->name],
+            namespace: $data[$cols->namespace] ?? null,
+            description: $data[$cols->description] ?? null,
+            context: isset($data[$cols->context]) ? json_decode($data[$cols->context], true) : [],
+        ), $all);
     }
 
-    public function save(Role $role): Role
+    public function save(BareRole $role): BareRole
     {
         $cols = service('vima_config')->columns->roles;
         $data = [
@@ -124,7 +116,7 @@ class RoleRepository implements RoleRepositoryInterface
         return $role;
     }
 
-    public function delete(Role $role): void
+    public function delete(BareRole $role): void
     {
         $cols = service('vima_config')->columns->roles;
         if ($role->id) {
@@ -145,20 +137,6 @@ class RoleRepository implements RoleRepositoryInterface
 
     public function deleteAll(): void
     {
-        $this->model->truncate();
-    }
-
-    public function getParents(Role $role): array
-    {
-        /** @var \Vima\Core\Contracts\RoleParentRepositoryInterface $rhRepo */
-        $rhRepo = service('vima_role_parents');
-        return $rhRepo->getParents($role);
-    }
-
-    public function getChildren(Role $role): array
-    {
-        /** @var \Vima\Core\Contracts\RoleParentRepositoryInterface $rhRepo */
-        $rhRepo = service('vima_role_parents');
-        return $rhRepo->getChildren($role);
+        $this->model->where('1=1')->delete();
     }
 }

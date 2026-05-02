@@ -11,6 +11,8 @@
 namespace {namespace};
 
 use Vima\Core\Contracts\PolicyInterface;
+use Vima\Core\DTOs\AccessContext;
+use Vima\Core\Attributes\MapToPermission;
 use {resourceFullClass};
 
 class {class} implements PolicyInterface
@@ -27,25 +29,30 @@ class {class} implements PolicyInterface
 
     /**
      * Check if user can view the resource.
+     * Maps to ability: 'view' or '{resourceVar}.view'
      *
-     * @param object $user
+     * @param AccessContext $ctx
      * @param {resourceClass} ${resourceVar}
      * @return bool
      */
-    public function canView(object $user, {resourceClass} ${resourceVar}): bool
+    public function canView(AccessContext $ctx, {resourceClass} ${resourceVar}): bool
     {
+        // Example: allow if user has 'admin' role or owns the resource
+        // return $ctx->is('admin') || $ctx->owns(${resourceVar}, 'user_id');
         return true;
     }
 
     /**
      * Check if user can edit the resource.
+     * Explicitly mapped to 'edit' ability via attribute.
      *
-     * @param object $user
+     * @param AccessContext $ctx
      * @param {resourceClass} ${resourceVar}
      * @return bool
      */
-    public function canEdit(object $user, {resourceClass} ${resourceVar}): bool
+    #[MapToPermission('edit')]
+    public function customEditMethod(AccessContext $ctx, {resourceClass} ${resourceVar}): bool
     {
-        return true;
+        return $ctx->owns(${resourceVar});
     }
 }

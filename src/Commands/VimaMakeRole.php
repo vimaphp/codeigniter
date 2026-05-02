@@ -37,6 +37,7 @@ class VimaMakeRole extends BaseCommand
         $name = $params[0] ?? CLI::prompt('Role name');
         $namespace = CLI::getOption('namespace');
         $description = CLI::getOption('description') ?? $params[1] ?? '';
+        
         $parents = array_map('trim', explode(',', CLI::getOption('parents') ?? ''));
         $children = array_map('trim', explode(',', CLI::getOption('children') ?? ''));
         $permissions = array_map('trim', explode(',', CLI::getOption('permissions') ?? ''));

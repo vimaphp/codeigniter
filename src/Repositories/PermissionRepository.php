@@ -12,7 +12,7 @@ namespace Vima\CodeIgniter\Repositories;
 
 use Vima\Core\Config\VimaConfig;
 use Vima\Core\Contracts\PermissionRepositoryInterface;
-use Vima\Core\Entities\Permission;
+use Vima\Core\Entities\Bare\BarePermission;
 use Vima\CodeIgniter\Models\PermissionModel;
 
 class PermissionRepository implements PermissionRepositoryInterface
@@ -26,7 +26,7 @@ class PermissionRepository implements PermissionRepositoryInterface
         $this->config = service('vima_config');
     }
 
-    public function findById(int|string $id): ?Permission
+    public function findById(int|string $id): ?BarePermission
     {
         $cols = $this->config->columns->permissions;
         $data = $this->model->asArray()->find($id);
@@ -34,15 +34,15 @@ class PermissionRepository implements PermissionRepositoryInterface
             return null;
         }
 
-        return new Permission(
+        return new BarePermission(
+            id: $data[$cols->id],
             name: $data[$cols->name],
             namespace: $data[$cols->namespace] ?? null,
-            id: $data[$cols->id],
             description: $data[$cols->description] ?? null
         );
     }
 
-    public function findByName(string $name, ?string $namespace = null): ?Permission
+    public function findByName(string $name, ?string $namespace = null): ?BarePermission
     {
         $cols = $this->config->columns->permissions;
         $query = $this->model->asArray()->where($cols->name, $name);
@@ -61,10 +61,10 @@ class PermissionRepository implements PermissionRepositoryInterface
             return null;
         }
 
-        return new Permission(
+        return new BarePermission(
+            id: $data[$cols->id],
             name: $data[$cols->name],
             namespace: $data[$cols->namespace] ?? null,
-            id: $data[$cols->id],
             description: $data[$cols->description] ?? null
         );
     }
@@ -83,15 +83,15 @@ class PermissionRepository implements PermissionRepositoryInterface
         }
 
         $all = $query->findAll();
-        return array_map(fn($data) => new Permission(
+        return array_map(fn($data) => new BarePermission(
+            id: $data[$cols->id],
             name: $data[$cols->name],
             namespace: $data[$cols->namespace] ?? null,
-            id: $data[$cols->id],
             description: $data[$cols->description] ?? null
         ), $all);
     }
 
-    public function save(Permission $permission): Permission
+    public function save(BarePermission $permission): BarePermission
     {
         $cols = $this->config->columns->permissions;
         $data = [
@@ -117,7 +117,7 @@ class PermissionRepository implements PermissionRepositoryInterface
         return $permission;
     }
 
-    public function delete(Permission $permission): void
+    public function delete(BarePermission $permission): void
     {
         $cols = $this->config->columns->permissions;
         if ($permission->id) {
@@ -138,6 +138,6 @@ class PermissionRepository implements PermissionRepositoryInterface
 
     public function deleteAll(): void
     {
-        $this->model->truncate();
+        $this->model->where('1=1')->delete();
     }
 }

@@ -15,7 +15,7 @@ namespace Vima\CodeIgniter\Commands;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 
-class VimaCacheClear extends BaseCommand
+class VimaOptimize extends BaseCommand
 {
     /**
      * The Command's Group
@@ -29,21 +29,21 @@ class VimaCacheClear extends BaseCommand
      *
      * @var string
      */
-    protected $name = 'vima:clear';
+    protected $name = 'vima:optimize';
 
     /**
      * The Command's Description
      *
      * @var string
      */
-    protected $description = 'Flush all Vima caches';
+    protected $description = 'Optimize Vima performance by pre-warming caches';
 
     /**
      * The Command's Usage
      *
      * @var string
      */
-    protected $usage = 'vima:clear';
+    protected $usage = 'vima:optimize';
 
     /**
      * Actually execute a command.
@@ -52,13 +52,17 @@ class VimaCacheClear extends BaseCommand
      */
     public function run(array $params)
     {
-        CLI::write('Clearing Vima caches...', 'yellow');
+        CLI::write('Warming up Vima caches...', 'yellow');
 
         try {
-            service('vima_deployment')->clear();
-            CLI::write('Vima caches flushed successfully.', 'green');
+            $stats = service('vima_deployment')->optimize();
+            
+            CLI::write('Optimization complete!', 'green');
+            CLI::write("  - Cached {$stats['roles']} roles.");
+            CLI::write("  - Cached {$stats['policies']} policy maps.");
+            
         } catch (\Throwable $e) {
-            CLI::error('Failed to clear Vima cache: ' . $e->getMessage());
+            CLI::error('Optimization failed: ' . $e->getMessage());
         }
     }
 }

@@ -5,6 +5,8 @@ namespace Vima\CodeIgniter\Commands;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 use Vima\CodeIgniter\Support\Utils;
+use Vima\Core\Entities\Bare\BarePermission;
+use Vima\Core\Entities\Bare\BareUserPermission;
 use Vima\Core\Entities\UserPermission;
 
 class VimaPermitUser extends BaseCommand
@@ -35,9 +37,9 @@ class VimaPermitUser extends BaseCommand
                 return;
             }
 
-            $userPermission = UserPermission::define(
-                $user->id,
-                $permission->id
+            $userPermission = new BareUserPermission(
+                user_id: $user->id,
+                permission_id: $permission->id
             );
 
             service('vima_user_permissions')->add($userPermission);

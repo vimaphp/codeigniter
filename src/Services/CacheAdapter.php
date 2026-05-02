@@ -37,7 +37,7 @@ class CacheAdapter implements CacheInterface
      */
     public function get(string $key, mixed $default = null): mixed
     {
-        $value = $this->cache->get($key);
+        $value = $this->cache->get($this->sanitizeKey($key));
         return $value === null ? $default : $value;
     }
 
@@ -46,7 +46,7 @@ class CacheAdapter implements CacheInterface
      */
     public function set(string $key, mixed $value, ?int $ttl = null): bool
     {
-        return $this->cache->save($key, $value, $ttl ?? 3600);
+        return $this->cache->save($this->sanitizeKey($key), $value, $ttl ?? 3600);
     }
 
     /**
@@ -54,7 +54,7 @@ class CacheAdapter implements CacheInterface
      */
     public function delete(string $key): bool
     {
-        return $this->cache->delete($key);
+        return $this->cache->delete($this->sanitizeKey($key));
     }
 
     /**
@@ -63,5 +63,13 @@ class CacheAdapter implements CacheInterface
     public function clear(): bool
     {
         return $this->cache->clean();
+    }
+
+    /**
+     * Sanitize cache key for CI4 compatibility (reserved: {}()/\@:)
+     */
+    protected function sanitizeKey(string $key): string
+    {
+        return str_replace(['{', '}', '(', ')', '/', '\\', '@', ':'], '_', $key);
     }
 }

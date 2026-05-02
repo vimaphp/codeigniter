@@ -88,6 +88,24 @@ $this->setup = new Setup(
 As from v0.0.1 you are provided with a SetupLibrary in Libraries/Vima/Setup.php that you can define all you roles and permmissions in and is automatically linked to setup config.
 This makes the config cleaner and with less clutter to work with.
 
+### Super Admin
+
+You can designate a specific role as a "Super Admin" that bypasses all authorization checks.
+
+```php
+/**
+ * Role name that represents the super admin.
+ */
+public $superAdminRole = 'admin';
+
+/**
+ * Whether super admins bypass all permission checks.
+ */
+public bool $superAdminBypass = true;
+```
+
+When `superAdminBypass` is true, any user assigned the `superAdminRole` will automatically pass all `can()`, `isPermitted()`, and `enforce()` checks.
+
 ## 4. Registering Policies
 
 Policies are class-based rules for ABAC. Register them in the `$policies` array:

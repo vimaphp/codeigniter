@@ -18,6 +18,7 @@ use Vima\CodeIgniter\Repositories\RolePermissionRepository;
 use Vima\CodeIgniter\Repositories\UserRoleRepository;
 use Vima\CodeIgniter\Repositories\UserPermissionRepository;
 use Vima\CodeIgniter\Repositories\UserDenyRepository;
+use Vima\CodeIgniter\Repositories\UserRoleDenyRepository;
 use Vima\Core\Config\VimaConfig;
 use Vima\Core\Contracts\AccessManagerInterface;
 use Vima\Core\Contracts\RoleRepositoryInterface;
@@ -26,6 +27,7 @@ use Vima\Core\Contracts\RolePermissionRepositoryInterface;
 use Vima\Core\Contracts\UserRoleRepositoryInterface;
 use Vima\Core\Contracts\UserPermissionRepositoryInterface;
 use Vima\Core\Contracts\UserDenyRepositoryInterface;
+use Vima\Core\Contracts\UserRoleDenyRepositoryInterface;
 use Vima\Core\Contracts\RoleParentRepositoryInterface;
 use Vima\Core\Services\AccessManager;
 use Vima\Core\Services\PolicyRegistry;
@@ -41,6 +43,7 @@ use Vima\Core\Config\UserRoleColumns;
 use Vima\Core\Config\RolePermissionColumns;
 use Vima\Core\Config\UserPermissionColumns;
 use Vima\Core\Config\UserDenyColumns;
+use Vima\Core\Config\UserRoleDenyColumns;
 use Vima\Core\Config\RoleParentColumns;
 use Vima\Core\Config\Setup;
 use Vima\Core\Contracts\EventDispatcherInterface;
@@ -53,6 +56,7 @@ use Vima\Core\Contracts\CacheInterface;
 use Vima\CodeIgniter\Services\CacheAdapter;
 use Vima\Core\Services\PermissionManager;
 use Vima\Core\Services\RoleManager;
+use Vima\Core\Services\DeploymentService;
 use function Vima\Core\resolve;
 
 if (!class_exists(Services::class, false)) {
@@ -64,6 +68,9 @@ if (!class_exists(Services::class, false)) {
                 return static::getSharedInstance('vima_config');
             }
 
+            /**
+             * @var Vima
+             */
             $ciConfig = config('Vima');
             $setup = $ciConfig->setup ?? new Setup();
 
@@ -76,14 +83,18 @@ if (!class_exists(Services::class, false)) {
                     rolePermissions: new RolePermissionColumns(),
                     userPermissions: new UserPermissionColumns(),
                     roleParents: new RoleParentColumns(),
-                    userDenies: new UserDenyColumns()
+                    userDenies: new UserDenyColumns(),
+                    userRoleDenies: new UserRoleDenyColumns()
                 ),
                 setup: $setup,
+                superAdminRole: $ciConfig->superAdminRole ?? null,
+                superAdminBypass: $ciConfig->superAdminBypass ?? false,
                 userResolver: $ciConfig->userResolver ?? null,
                 cacheEnabled: $ciConfig->cacheEnabled ?? false,
                 cacheTTL: $ciConfig->cacheTTL ?? 3600,
-                cachePrefix: $ciConfig->cachePrefix ?? 'vima:'
-            );
+                cachePrefix: $ciConfig->cachePrefix ?? 'vima_'
+                );
+
         }
 
         public static function vima_cache(bool $getShared = true): CacheInterface
@@ -117,6 +128,8 @@ if (!class_exists(Services::class, false)) {
             $container->register(UserPermissionRepositoryInterface::class, fn() => service('vima_user_permissions'));
             $container->register(RoleParentRepositoryInterface::class, fn() => service('vima_role_parents'));
             $container->register(UserDenyRepositoryInterface::class, fn() => service('vima_user_denies'));
+            $container->register(UserRoleDenyRepositoryInterface::class, fn() => service('vima_user_role_denies'));
+            $container->register(\Vima\Core\Contracts\AuditRepositoryInterface::class, fn() => new \Vima\CodeIgniter\Repositories\AuditRepository());
 
             $container->register(VimaConfig::class, fn() => service('vima_config'));
             $container->register(CacheInterface::class, fn() => service('vima_cache'));
@@ -129,11 +142,25 @@ if (!class_exists(Services::class, false)) {
             // Register Manager services for auto-wiring
             $container->register(RoleManager::class);
             $container->register(PermissionManager::class);
+            $container->register(DeploymentService::class);
 
             $container->register(AccessManagerInterface::class, AccessManager::class);
 
             // AccessManager itself
             return resolve(AccessManagerInterface::class);
+        }
+
+        public static function vima_deployment(bool $getShared = true): DeploymentService
+        {
+            if ($getShared) {
+                return static::getSharedInstance('vima_deployment');
+            }
+
+            return new DeploymentService(
+                resolve(RoleManager::class),
+                resolve(PolicyRegistry::class),
+                service('vima_cache')
+            );
         }
 
         public static function vima_events(bool $getShared = true): EventDispatcherInterface
@@ -192,6 +219,14 @@ if (!class_exists(Services::class, false)) {
             return new UserDenyRepository();
         }
 
+        public static function vima_user_role_denies(bool $getShared = true): UserRoleDenyRepositoryInterface
+        {
+            if ($getShared) {
+                return static::getSharedInstance('vima_user_role_denies');
+            }
+            return new UserRoleDenyRepository();
+        }
+
         public static function vima_role_parents(bool $getShared = true): RoleParentRepositoryInterface
         {
             if ($getShared) {
@@ -235,8 +270,8 @@ if (!class_exists(Services::class, false)) {
             }
 
             return new SyncService(
-                service('vima_roles'),
-                service('vima_permissions'),
+                resolve(RoleManager::class),
+                resolve(PermissionManager::class),
                 service('vima_role_permissions'),
                 service('vima_events'),
                 service('vima_cache')

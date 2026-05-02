@@ -6,7 +6,7 @@
     "require": {
         "php": ">=8.5",
         "codeigniter4/framework": "^4.7",
-        "vima/core": "^0.2.12"
+        "vima/core": "^0.2.13"
     },
     "autoload": {
         "psr-4": {
@@ -22,7 +22,8 @@
         "phpunit/phpunit": "^13.1"
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit --no-coverage",
+        "test:coverage": "phpunit --coverage-html coverage"
     },
     "extra": {
         "codeigniter4": {

@@ -10,6 +10,7 @@
 
 namespace Vima\CodeIgniter\Config;
 
+use Closure;
 use CodeIgniter\Config\BaseConfig;
 use RuntimeException;
 use Vima\Core\Config\Setup;
@@ -25,6 +26,7 @@ use Vima\Core\Config\RoleParentColumns;
 use Vima\Core\Contracts\PolicyInterface;
 use Vima\Core\Contracts\PolicyRegistryInterface;
 use Vima\Core\Contracts\SetupProviderInterface;
+use Vima\Core\Entities\SuperAdmin;
 use Vima\Core\Services\PolicyRegistry;
 use function Vima\Core\resolve;
 
@@ -32,16 +34,19 @@ class Vima extends BaseConfig
 {
     /**
      * Table names.
+     * @var Tables
      */
     public Tables $tables;
 
     /**
      * Column names mapping.
+     * @var Columns
      */
     public Columns $columns;
 
     /**
      * Declarative setup for roles and permissions.
+     * @var Setup
      */
     public Setup $setup;
 
@@ -60,27 +65,59 @@ class Vima extends BaseConfig
     public array $policies = [];
 
     /**
+     * Whether to automatically discover policy classes in the application.
+     * @var bool
+     */
+    public bool $autoDiscoverPolicies = true;
+
+    /**
+     * The directory to scan for policies when auto-discovery is enabled.
+     * @var string
+     */
+    public string $policyDirectory = 'Policies';
+
+    /**
      * Callback or Closure to resolve the current user object.
      * signature: fn() => object|null
+     * @var Closure|null
      */
-    public $currentUser = null;
+    public ?Closure $currentUser = null;
 
     /**
      * Callback or Closure to resolved the user's ID/Primary Key from a user object/array.
      * signature: fn($user) => string|int
+     * @var Closure|null
      */
-    public $userResolver = null;
+    public ?Closure $userResolver = null;
 
     /**
      * Optional ID Resolver for hashed route segments. Used with the Vima::resource() filter
      * signature: fn($id) => mixed
+     * @var Closure|null
      */
-    public $routeSegmentResolver = null;
+    public ?Closure $routeSegmentResolver = null;
+
+    /**
+     * Role name or SuperAdmin object representing the super admin role. Super admins can bypass all permission checks if $superAdminBypass is true.
+     * @var SuperAdmin|string|null
+     */
+    public SuperAdmin|string|null $superAdminRole = null;
+
+    /**
+     * Whether to bypass auth checks for superadmins automatically
+     * @var bool
+     */
+    public bool $superAdminBypass = false;
 
     /**
      * Whether to enable authorization results caching.
      */
     public bool $cacheEnabled = false;
+
+    /**
+     * Whether to enable audit logging of authorization checks.
+     */
+    public bool $auditEnabled = false;
 
     /**
      * Cache Time-To-Live in seconds.
@@ -90,7 +127,7 @@ class Vima extends BaseConfig
     /**
      * Prefix for cache keys.
      */
-    public string $cachePrefix = 'vima:';
+    public string $cachePrefix = 'vima_';
 
     public function __construct()
     {
@@ -136,6 +173,7 @@ class Vima extends BaseConfig
          */
         $policyRegistry = resolve(PolicyRegistryInterface::class);
 
+        // 1. Manual registration
         foreach ($this->policies as $p) {
             if (!class_exists($p)) {
                 throw new RuntimeException("[Vima] Class $p does not exist");
@@ -148,6 +186,11 @@ class Vima extends BaseConfig
             }
 
             $policyRegistry->registerClass($instance::getResource(), $p);
+        }
+
+        // 2. Auto-discovery
+        if ($this->autoDiscoverPolicies) {
+            \Vima\CodeIgniter\Support\Discovery::discoverPolicies($this->policyDirectory);
         }
     }
 }

@@ -17,15 +17,14 @@ abstract class VimaTestCase extends CIUnitTestCase
     {
         parent::setUp();
 
-        // Run migrations
-        $migrate = new CreateVimaTables();
-        $migrate->up();
+        // Clear cache
+        if (function_exists('vima')) {
+            vima()->clearCache();
+        }
     }
 
     protected function tearDown(): void
     {
-        $migrate = new CreateVimaTables();
-        $migrate->down();
         parent::tearDown();
     }
 

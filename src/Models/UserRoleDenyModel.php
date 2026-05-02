@@ -15,31 +15,32 @@ namespace Vima\CodeIgniter\Models;
 use CodeIgniter\Model;
 
 /**
- * Class UserDenyModel
+ * Class UserRoleDenyModel
  *
- * Model for the user_denies table.
+ * Model for the user_role_denies table.
  */
-class UserDenyModel extends Model
+class UserRoleDenyModel extends Model
 {
-    protected $table = 'user_denies'; // Default, will be overridden by repository/config
+    protected $table = 'user_role_denies';
     protected $primaryKey = 'id';
     protected $returnType = 'array';
     protected $useAutoIncrement = true;
-    protected $allowedFields = ['user_id', 'permission_id'];
+    protected $allowedFields = ['user_id', 'role_id', 'reason', 'expires_at', 'created_at'];
 
     public function __construct()
     {
         parent::__construct();
         
         $config = config('Vima');
-        $cols = $config->columns->userDenies;
+        $this->table = $config->tables->userRoleDenies ?? 'user_role_denies';
+        
+        $cols = $config->columns->userRoleDenies;
         $this->allowedFields = [
             $cols->userId,
-            $cols->permissionId,
-            $cols->namespace,
+            $cols->roleId,
             $cols->reason,
             $cols->expiresAt,
-            $cols->createdAt
+            $cols->createdAt,
         ];
     }
 }

@@ -27,6 +27,6 @@ class UserPermissionModel extends Model
         parent::__construct();
         $cols = service('vima_config')->columns->userPermissions;
         $this->table = service('vima_config')->tables->userPermissions;
-        $this->allowedFields = [$cols->userId, $cols->permissionId];
+        $this->allowedFields = [$cols->userId, $cols->permissionId, $cols->constraints];
     }
 }

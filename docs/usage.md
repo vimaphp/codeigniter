@@ -88,29 +88,82 @@ $routes->get('posts/edit/(:num)', 'Posts::edit/$1', [
 
 ## 4. Writing Policies
 
-Policies are plain PHP classes that implement `Vima\Core\Contracts\PolicyInterface`.
+Policies are plain PHP classes that implement `Vima\Core\Contracts\PolicyInterface`. They allow you to define complex, resource-based authorization logic.
+
+### Method Naming Convention
+By default, Vima maps an ability name to a camelCase method prefixed with `can`.
+- `edit` -> `canEdit()`
+- `posts.delete` -> `canDelete()`
+
+### Attribute-Based Mapping
+You can use the `MapToPermission` attribute to explicitly map a method to a permission, regardless of its name. This is also how you lock a method to a specific **namespace**.
 
 ```php
 namespace App\Policies;
 
 use Vima\Core\Contracts\PolicyInterface;
-use App\Entities\User;
+use Vima\Core\Attributes\MapToPermission;
+use Vima\Core\DTOs\AccessContext;
 use App\Entities\Post;
 
 class PostPolicy implements PolicyInterface {
-    public static function getResource() {
+    public static function getResource(): string {
         return Post::class;
     }
 
-    public function canEdit(User $user, Post $post, string $ability, ?string $namespace = null): bool {
-        return $user->id === $post->user_id || $user->is_admin;
+    // Default: maps to 'posts.edit' or 'edit'
+    public function canEdit(AccessContext $ctx, Post $post): bool {
+        return $ctx->user->id === $post->user_id;
+    }
+
+    // Explicit: maps to 'publish'
+    #[MapToPermission('publish')]
+    public function customPublishMethod(AccessContext $ctx, Post $post): bool {
+        return true;
+    }
+
+    // Namespaced: maps to 'blog:publish'
+    #[MapToPermission('publish', namespace: 'blog')]
+    public function namespacedPublish(AccessContext $ctx, Post $post): bool {
+        return true;
     }
 }
 ```
 
 Register your policy in `Config/Vima.php` to make it available.
 
-## 5. Type-Safe Mappers & Consistency
+## 5. Expanded Deny System
+
+Vima provides a powerful "Deny" layer that overrides all roles and permissions, including Super Admin bypass.
+
+### Explicit Denials
+You can deny a specific permission or an entire role to a user. Denials can also be temporal (expiring).
+
+```php
+// Via Spark Command
+php spark vima:deny 1 "posts.*"           // Deny all post permissions
+php spark vima:deny 1 "blog:*"            // Deny entire blog namespace
+php spark vima:deny 1 "editor" --role     // Deny the "editor" role
+php spark vima:deny 1 "*"                 // Account Suspension (deny everything)
+php spark vima:deny 1 "edit" --for "24h"  // Expiring denial
+
+// Via Controller Trait
+$this->denyUser('posts.edit', 'Suspicious activity');
+$this->denyRole('admin', 'Pending verification', new \DateTime('+1 week'));
+```
+
+### Checking Denials
+```php
+if ($this->isDenied('posts.edit')) {
+    // ...
+}
+
+if ($this->isRoleDenied('admin')) {
+    // ...
+}
+```
+
+## 6. Type-Safe Mappers & Consistency
 
 Vima generates mapper classes that provide IDE autocompletion and ensure your access control logic remains stable, even if you rename roles or permissions in the database.
 

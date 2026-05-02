@@ -37,7 +37,11 @@ class VimaPolicyGeneratorTest extends VimaTestCase
         $this->assertStringContainsString('class BlogPolicy implements PolicyInterface', $content);
         $this->assertStringContainsString('use App\Entities\Blog;', $content);
         $this->assertStringContainsString('return Blog::class;', $content);
-        $this->assertStringContainsString('public function canView(object $user, Blog $blog): bool', $content);
+        $this->assertStringContainsString('public function canView(AccessContext $ctx, Blog $blog): bool', $content);
+        $this->assertStringContainsString('use Vima\Core\DTOs\AccessContext;', $content);
+        $this->assertStringContainsString('use Vima\Core\Attributes\MapToPermission;', $content);
+        $this->assertStringContainsString('#[MapToPermission(\'edit\')]', $content);
+        $this->assertStringContainsString('public function customEditMethod(AccessContext $ctx, Blog $blog): bool', $content);
     }
 
     public function testGeneratorOverwritesWithForce()

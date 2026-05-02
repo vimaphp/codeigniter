@@ -11,9 +11,8 @@
 namespace Vima\CodeIgniter\Repositories;
 
 use Vima\Core\Contracts\RoleParentRepositoryInterface;
-use Vima\Core\Contracts\RoleRepositoryInterface;
-use Vima\Core\Entities\Role;
-use Vima\Core\Entities\RoleParent;
+use Vima\Core\Entities\Bare\BareRole;
+use Vima\Core\Entities\Bare\BareRoleParent;
 use Vima\CodeIgniter\Models\RoleParentModel;
 
 class RoleParentRepository implements RoleParentRepositoryInterface
@@ -25,7 +24,7 @@ class RoleParentRepository implements RoleParentRepositoryInterface
         $this->model = new RoleParentModel();
     }
 
-    public function assign(RoleParent $relationship): void
+    public function assign(BareRoleParent $relationship): void
     {
         $cols = service('vima_config')->columns->roleParents;
         $data = [
@@ -41,7 +40,7 @@ class RoleParentRepository implements RoleParentRepositoryInterface
         }
     }
 
-    public function remove(RoleParent $relationship): void
+    public function remove(BareRoleParent $relationship): void
     {
         $cols = service('vima_config')->columns->roleParents;
         $this->model
@@ -50,47 +49,33 @@ class RoleParentRepository implements RoleParentRepositoryInterface
             ->delete();
     }
 
-    public function clearParents(Role $role): void
+    public function clearParents(BareRole $role): void
     {
         $cols = service('vima_config')->columns->roleParents;
         $this->model->where($cols->roleId, $role->id)->delete();
     }
 
-    public function getParents(Role $role): array
+    public function getParents(BareRole $role): array
     {
         $cols = service('vima_config')->columns->roleParents;
         $relationships = $this->model->where($cols->roleId, $role->id)->findAll();
 
-        $roles = [];
-        /** @var RoleRepositoryInterface $roleRepo */
-        $roleRepo = service('vima_roles');
-
-        foreach ($relationships as $data) {
-            $parent = $roleRepo->findById($data[$cols->parentId], true);
-            if ($parent) {
-                $roles[] = $parent;
-            }
-        }
-
-        return $roles;
+        return array_map(fn($data) => new BareRoleParent(
+            id: $data[$cols->id] ?? null,
+            role_id: $data[$cols->roleId],
+            parent_id: $data[$cols->parentId]
+        ), $relationships);
     }
 
-    public function getChildren(Role $role): array
+    public function getChildren(BareRole $role): array
     {
         $cols = service('vima_config')->columns->roleParents;
         $relationships = $this->model->where($cols->parentId, $role->id)->findAll();
 
-        $roles = [];
-        /** @var RoleRepositoryInterface $roleRepo */
-        $roleRepo = service('vima_roles');
-
-        foreach ($relationships as $data) {
-            $child = $roleRepo->findById($data[$cols->roleId], true);
-            if ($child) {
-                $roles[] = $child;
-            }
-        }
-
-        return $roles;
+        return array_map(fn($data) => new BareRoleParent(
+            id: $data[$cols->id] ?? null,
+            role_id: $data[$cols->roleId],
+            parent_id: $data[$cols->parentId]
+        ), $relationships);
     }
 }
